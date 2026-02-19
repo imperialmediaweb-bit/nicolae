@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from "react";
 import AppLayout from "@/components/AppLayout";
 import Link from "next/link";
+import jsPDF from "jspdf";
 
 interface AIReport {
   contextPersonal: string;
@@ -78,6 +79,166 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
     { label: "Speranta", value: data.hope },
   ];
 
+  function downloadPDF() {
+    if (!data) return;
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pw = doc.internal.pageSize.getWidth();
+    const margin = 18;
+    const maxW = pw - margin * 2;
+    let y = 20;
+
+    function checkPage(need: number) {
+      if (y + need > 275) { doc.addPage(); y = 20; }
+    }
+
+    function sectionHeading(text: string) {
+      checkPage(14);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(30, 30, 80);
+      doc.text(text, margin, y);
+      y += 4;
+      doc.setDrawColor(99, 102, 241);
+      doc.setLineWidth(0.5);
+      doc.line(margin, y, pw - margin, y);
+      y += 6;
+    }
+
+    function labelValue(l: string, v: string) {
+      checkPage(8);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(80, 80, 80);
+      doc.text(l + ":", margin, y);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(30, 30, 30);
+      doc.text(v, margin + 42, y);
+      y += 6;
+    }
+
+    function paragraph(text: string) {
+      checkPage(12);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(40, 40, 40);
+      const lines = doc.splitTextToSize(text, maxW);
+      doc.text(lines, margin, y);
+      y += lines.length * 4.5 + 2;
+    }
+
+    function bulletList(items: string[], color: [number, number, number] = [40, 40, 40]) {
+      items.forEach((item) => {
+        checkPage(10);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(...color);
+        const lines = doc.splitTextToSize(item, maxW - 6);
+        doc.text("-", margin + 1, y);
+        doc.text(lines, margin + 6, y);
+        y += lines.length * 4.5 + 1.5;
+      });
+    }
+
+    // === HEADER ===
+    doc.setFillColor(99, 102, 241);
+    doc.rect(0, 0, pw, 36, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.setTextColor(255, 255, 255);
+    doc.text("FISA PSIHOSOCIALA", pw / 2, 14, { align: "center" });
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`${data.beneficiary.lastName} ${data.beneficiary.firstName}  |  Cod: ${data.beneficiary.code}`, pw / 2, 22, { align: "center" });
+    doc.setFontSize(8);
+    doc.text(`Data evaluare: ${new Date(data.date).toLocaleDateString("ro-RO")}  |  Evaluator: ${data.evaluator.name} (${data.evaluator.role})`, pw / 2, 30, { align: "center" });
+    y = 44;
+
+    // === DATE BENEFICIAR ===
+    sectionHeading("Date beneficiar");
+    labelValue("Nume complet", `${data.beneficiary.lastName} ${data.beneficiary.firstName}`);
+    labelValue("Cod intern", data.beneficiary.code);
+    labelValue("Varsta", `${data.beneficiary.age} ani`);
+    labelValue("Sex", data.beneficiary.sex === "M" ? "Masculin" : "Feminin");
+    labelValue("Locatie", data.beneficiary.location);
+    y += 4;
+
+    // === COMPORTAMENT ===
+    sectionHeading("Comportament observat");
+    labelValue("Comunicare", data.communicationLevel);
+    labelValue("Reactie la stres", data.stressReaction);
+    labelValue("Sociabilitate", data.sociability);
+    labelValue("Autonomie", data.autonomy);
+    labelValue("Calitate somn", data.sleepQuality);
+    labelValue("Apetit", data.appetite);
+    y += 4;
+
+    // === STARE EMOTIONALA ===
+    sectionHeading("Stare emotionala");
+    const activeEmotions = emotions.filter((e) => e.value).map((e) => e.label);
+    const inactiveEmotions = emotions.filter((e) => !e.value).map((e) => e.label);
+    if (activeEmotions.length > 0) labelValue("Prezente", activeEmotions.join(", "));
+    if (inactiveEmotions.length > 0) labelValue("Absente", inactiveEmotions.join(", "));
+    if (data.observations) {
+      y += 2;
+      labelValue("Observatii", "");
+      y -= 4;
+      paragraph(data.observations);
+    }
+    y += 4;
+
+    // === PROFIL AI ===
+    if (report) {
+      sectionHeading("Profil psihosocial orientativ (generat AI)");
+
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
+      doc.text("1. Context personal", margin, y); y += 5;
+      paragraph(report.contextPersonal); y += 2;
+
+      checkPage(10);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
+      doc.text("2. Profil emotional", margin, y); y += 5;
+      paragraph(report.profilEmotional); y += 2;
+
+      checkPage(10);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
+      doc.text("3. Nevoi principale", margin, y); y += 5;
+      bulletList(report.nevoiPrincipale, [30, 30, 100]); y += 2;
+
+      checkPage(10);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
+      doc.text("4. Riscuri identificate", margin, y); y += 5;
+      bulletList(report.riscuri, [180, 30, 30]); y += 2;
+
+      checkPage(10);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
+      doc.text("5. Recomandari pentru personal", margin, y); y += 5;
+      bulletList(report.recomandariPersonal, [20, 120, 50]); y += 2;
+
+      checkPage(10);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
+      doc.text("6. Plan de sprijin", margin, y); y += 5;
+      bulletList(report.planSprijin, [40, 40, 40]);
+    }
+
+    // === FOOTER ===
+    checkPage(20);
+    y += 6;
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, y, pw - margin, y);
+    y += 5;
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(7);
+    doc.setTextColor(140, 140, 140);
+    doc.text("Acest profil este orientativ si nu constituie un diagnostic medical sau psihologic.", margin, y);
+    y += 3.5;
+    doc.text("Scopul este de a oferi sprijin personalului in intelegerea nevoilor beneficiarului.", margin, y);
+    y += 3.5;
+    doc.text(`Document generat la ${new Date().toLocaleString("ro-RO")} | Casa Nicolae`, margin, y);
+
+    const fileName = `Fisa_${data.beneficiary.lastName}_${data.beneficiary.firstName}_${new Date(data.date).toISOString().slice(0, 10)}.pdf`;
+    doc.save(fileName);
+  }
+
   return (
     <AppLayout title="Detalii evaluare" backHref="/evaluari">
       <div className="max-w-4xl mx-auto">
@@ -90,10 +251,13 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
             </h1>
             <p className="text-gray-500">v{data.version} | {new Date(data.date).toLocaleDateString("ro-RO")} | Evaluator: {data.evaluator.name}</p>
           </div>
-          <Link href={`/rapoarte?evaluationId=${data.id}`}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition text-sm">
-            Exporta PDF
-          </Link>
+          <button onClick={downloadPDF}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition text-sm flex items-center gap-2 active:scale-95">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Descarca PDF
+          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
