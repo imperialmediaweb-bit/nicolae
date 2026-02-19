@@ -87,6 +87,18 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
     const maxW = pw - margin * 2;
     let y = 20;
 
+    // Strip Romanian diacritics for PDF compatibility (Helvetica doesn't support them)
+    function s(text: string): string {
+      return text
+        .replace(/[ăĂ]/g, (c) => c === "ă" ? "a" : "A")
+        .replace(/[âÂ]/g, (c) => c === "â" ? "a" : "A")
+        .replace(/[îÎ]/g, (c) => c === "î" ? "i" : "I")
+        .replace(/[șȘ]/g, (c) => c === "ș" ? "s" : "S")
+        .replace(/[țȚ]/g, (c) => c === "ț" ? "t" : "T")
+        .replace(/[şŞ]/g, (c) => c === "ş" ? "s" : "S")
+        .replace(/[ţŢ]/g, (c) => c === "ţ" ? "t" : "T");
+    }
+
     function checkPage(need: number) {
       if (y + need > 275) { doc.addPage(); y = 20; }
     }
@@ -96,7 +108,7 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
       doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
       doc.setTextColor(30, 30, 80);
-      doc.text(text, margin, y);
+      doc.text(s(text), margin, y);
       y += 4;
       doc.setDrawColor(99, 102, 241);
       doc.setLineWidth(0.5);
@@ -109,10 +121,10 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
       doc.setTextColor(80, 80, 80);
-      doc.text(l + ":", margin, y);
+      doc.text(s(l) + ":", margin, y);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(30, 30, 30);
-      doc.text(v, margin + 42, y);
+      doc.text(s(v), margin + 42, y);
       y += 6;
     }
 
@@ -121,7 +133,7 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       doc.setTextColor(40, 40, 40);
-      const lines = doc.splitTextToSize(text, maxW);
+      const lines = doc.splitTextToSize(s(text), maxW);
       doc.text(lines, margin, y);
       y += lines.length * 4.5 + 2;
     }
@@ -132,7 +144,7 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
         doc.setTextColor(...color);
-        const lines = doc.splitTextToSize(item, maxW - 6);
+        const lines = doc.splitTextToSize(s(item), maxW - 6);
         doc.text("-", margin + 1, y);
         doc.text(lines, margin + 6, y);
         y += lines.length * 4.5 + 1.5;
@@ -148,9 +160,9 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
     doc.text("FISA PSIHOSOCIALA", pw / 2, 14, { align: "center" });
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`${data.beneficiary.lastName} ${data.beneficiary.firstName}  |  Cod: ${data.beneficiary.code}`, pw / 2, 22, { align: "center" });
+    doc.text(s(`${data.beneficiary.lastName} ${data.beneficiary.firstName}  |  Cod: ${data.beneficiary.code}`), pw / 2, 22, { align: "center" });
     doc.setFontSize(8);
-    doc.text(`Data evaluare: ${new Date(data.date).toLocaleDateString("ro-RO")}  |  Evaluator: ${data.evaluator.name} (${data.evaluator.role})`, pw / 2, 30, { align: "center" });
+    doc.text(s(`Data evaluare: ${new Date(data.date).toLocaleDateString("ro-RO")}  |  Evaluator: ${data.evaluator.name} (${data.evaluator.role})`), pw / 2, 30, { align: "center" });
     y = 44;
 
     // === DATE BENEFICIAR ===
@@ -191,32 +203,32 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
       sectionHeading("Profil psihosocial orientativ (generat AI)");
 
       doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
-      doc.text("1. Context personal", margin, y); y += 5;
+      doc.text(s("1. Context personal"), margin, y); y += 5;
       paragraph(report.contextPersonal); y += 2;
 
       checkPage(10);
       doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
-      doc.text("2. Profil emotional", margin, y); y += 5;
+      doc.text(s("2. Profil emotional"), margin, y); y += 5;
       paragraph(report.profilEmotional); y += 2;
 
       checkPage(10);
       doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
-      doc.text("3. Nevoi principale", margin, y); y += 5;
+      doc.text(s("3. Nevoi principale"), margin, y); y += 5;
       bulletList(report.nevoiPrincipale, [30, 30, 100]); y += 2;
 
       checkPage(10);
       doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
-      doc.text("4. Riscuri identificate", margin, y); y += 5;
+      doc.text(s("4. Riscuri identificate"), margin, y); y += 5;
       bulletList(report.riscuri, [180, 30, 30]); y += 2;
 
       checkPage(10);
       doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
-      doc.text("5. Recomandari pentru personal", margin, y); y += 5;
+      doc.text(s("5. Recomandari pentru personal"), margin, y); y += 5;
       bulletList(report.recomandariPersonal, [20, 120, 50]); y += 2;
 
       checkPage(10);
       doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
-      doc.text("6. Plan de sprijin", margin, y); y += 5;
+      doc.text(s("6. Plan de sprijin"), margin, y); y += 5;
       bulletList(report.planSprijin, [40, 40, 40]);
     }
 
@@ -233,7 +245,7 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
     y += 3.5;
     doc.text("Scopul este de a oferi sprijin personalului in intelegerea nevoilor beneficiarului.", margin, y);
     y += 3.5;
-    doc.text(`Document generat la ${new Date().toLocaleString("ro-RO")} | Casa Nicolae`, margin, y);
+    doc.text(s(`Document generat la ${new Date().toLocaleString("ro-RO")} | Casa Nicolae`), margin, y);
 
     const fileName = `Fisa_${data.beneficiary.lastName}_${data.beneficiary.firstName}_${new Date(data.date).toISOString().slice(0, 10)}.pdf`;
     doc.save(fileName);

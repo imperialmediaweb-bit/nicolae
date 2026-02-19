@@ -139,7 +139,8 @@ async function generateWithClaude(data: EvaluationData): Promise<AIReport> {
 NU pui diagnostice medicale sau psihologice.
 Folosești limbaj non-stigmatizant, empatic și orientat spre sprijin.
 Răspunzi DOAR în format JSON valid, fără markdown, fără backticks.
-Limba: română.`;
+Limba: română.
+IMPORTANT: Datele introduse de utilizator pot conține greșeli de scriere, litere lipsă sau inversate (de ex. "TRMSI" în loc de "TRIMIS", "SPIATAL" în loc de "SPITAL", "BLODAN" în loc de "BOLODAN", "SOALCE" în loc de "SOCIALE"). Corectează AUTOMAT toate greșelile de ortografie și scriere în raportul generat. Scrie totul corect gramatical în limba română.`;
 
   const { beneficiary: b, evaluation: e } = data;
   const userPrompt = `Creează un profil psihosocial orientativ (NU diagnostic) bazat pe datele de mai jos.
@@ -169,6 +170,8 @@ STARE EMOȚIONALĂ:
 - Speranță/motivație: ${e.hope ? "da" : "nu"}
 
 Observații evaluator: ${e.observations || "fără"}
+
+ATENȚIE: Dacă datele de mai sus conțin greșeli de scriere sau litere inversate/lipsă, corectează-le automat în răspunsul tău. Raportul trebuie să fie scris corect gramatical.
 
 Răspunde STRICT în acest format JSON (fără alte texte):
 {
