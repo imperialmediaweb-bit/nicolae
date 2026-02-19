@@ -137,13 +137,32 @@ function EvaluareNouaContent() {
           {step === 1 && (
             <div className="space-y-4">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Selecteaza beneficiarul</h2>
-              <select value={form.beneficiaryId} onChange={(e) => update("beneficiaryId", e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-gray-900">
-                <option value="">-- Alege beneficiar --</option>
-                {beneficiari.map((b) => (
-                  <option key={b.id} value={b.id}>{b.firstName} {b.lastName} ({b.code})</option>
-                ))}
-              </select>
+              {beneficiari.length === 0 ? (
+                <div className="text-center py-6">
+                  <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-900 font-semibold mb-1">Niciun beneficiar in sistem</p>
+                  <p className="text-sm text-gray-500 mb-5">Trebuie sa adaugi cel putin un beneficiar<br />inainte de a crea o evaluare.</p>
+                  <a href="/beneficiari/nou"
+                    className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white px-5 py-3 rounded-2xl font-semibold text-sm active:scale-[0.97] transition-all shadow-sm">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                    Adauga beneficiar
+                  </a>
+                </div>
+              ) : (
+                <select value={form.beneficiaryId} onChange={(e) => update("beneficiaryId", e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-gray-900">
+                  <option value="">-- Alege beneficiar --</option>
+                  {beneficiari.map((b) => (
+                    <option key={b.id} value={b.id}>{b.firstName} {b.lastName} ({b.code})</option>
+                  ))}
+                </select>
+              )}
             </div>
           )}
 

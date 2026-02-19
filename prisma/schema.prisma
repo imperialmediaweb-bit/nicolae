@@ -140,6 +140,15 @@ model MedicationLog {
   user   User @relation(fields: [userId], references: [id])
 }
 
+// ==================== CONFIGURARE SISTEM ====================
+
+model SystemConfig {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+  updatedAt DateTime @updatedAt
+}
+
 // ==================== AUDIT / GDPR ====================
 
 model AccessLog {
