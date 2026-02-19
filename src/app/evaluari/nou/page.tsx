@@ -9,6 +9,7 @@ interface Beneficiary {
   code: string;
   firstName: string;
   lastName: string;
+  hasConsent: boolean;
 }
 
 export default function EvaluareNouaPage() {
@@ -162,6 +163,18 @@ function EvaluareNouaContent() {
                     <option key={b.id} value={b.id}>{b.firstName} {b.lastName} ({b.code})</option>
                   ))}
                 </select>
+                {form.beneficiaryId && (() => {
+                  const selected = beneficiari.find(b => b.id === form.beneficiaryId);
+                  if (selected && !selected.hasConsent) {
+                    return (
+                      <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl">
+                        <p className="text-sm text-red-700 font-medium">Acest beneficiar nu are consimtamant GDPR!</p>
+                        <p className="text-xs text-red-600 mt-1">Nu poti face evaluare fara acord GDPR. Editeaza fisa beneficiarului pentru a adauga acordul.</p>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               )}
             </div>
           )}
@@ -233,7 +246,8 @@ function EvaluareNouaContent() {
 
             {step < 3 ? (
               <button onClick={() => setStep(step + 1)}
-                className="flex-1 bg-emerald-600 text-white py-3 rounded-2xl font-semibold text-sm active:scale-[0.98] transition-all">
+                disabled={step === 1 && (!form.beneficiaryId || !beneficiari.find(b => b.id === form.beneficiaryId)?.hasConsent)}
+                className="flex-1 bg-emerald-600 text-white py-3 rounded-2xl font-semibold text-sm active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100">
                 Urmatorul pas
               </button>
             ) : (

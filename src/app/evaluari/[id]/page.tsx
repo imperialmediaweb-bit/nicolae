@@ -41,6 +41,7 @@ interface EvalData {
     age: number;
     sex: string;
     location: string;
+    hasConsent: boolean;
   };
   evaluator: { name: string; role: string };
 }
@@ -172,6 +173,7 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
     labelValue("Varsta", `${data.beneficiary.age} ani`);
     labelValue("Sex", data.beneficiary.sex === "M" ? "Masculin" : "Feminin");
     labelValue("Locatie", data.beneficiary.location);
+    labelValue("Acord GDPR", data.beneficiary.hasConsent ? "DA - Consimtamant obtinut" : "NU");
     y += 4;
 
     // === COMPORTAMENT ===
