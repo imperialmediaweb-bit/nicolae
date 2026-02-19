@@ -71,6 +71,7 @@ export async function POST() {
     });
   } catch (error) {
     console.error("Seed error:", error);
-    return NextResponse.json({ error: "Eroare la seed" }, { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: "Eroare la seed", details: message }, { status: 500 });
   }
 }
