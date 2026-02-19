@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ==================== AUTENTIFICARE ====================
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  name      String
+  role      String   @default("asistent") // admin, asistent, psiholog, farmacist
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  evaluations  Evaluation[]
+  accessLogs   AccessLog[]
+  medicationLogs MedicationLog[]
+}
+
+// ==================== BENEFICIARI ====================
+
+model Beneficiary {
+  id          String   @id @default(cuid())
+  code        String   @unique // cod intern
+  firstName   String
+  lastName    String
+  age         Int
+  sex         String   // M / F
+  location    String   // centru / locatie
+  photoUrl    String?  // optional, cu consimtamant
+  hasConsent  Boolean  @default(false)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Situatie sociala
+  hasFamily           String  @default("nu") // da/nu/partial
+  housingStatus       String  @default("centru") // fara_adapost/centru/familie
+  familyContactFreq   String? // frecventa contact
+  institutionHistory  String? // istoric institutionalizare
+
+  // Stare medicala (optional)
+  knownDiseases       String? // boli cunoscute
+  medication          String? // medicatie
+  disabilities        String? // handicap/limitari
+  priorPsychEval      String  @default("nu") // da/nu
+
+  evaluations Evaluation[]
+}
+
+// ==================== EVALUARI PSIHOSOCIALE ====================
+
+model Evaluation {
+  id        String   @id @default(cuid())
+  date      DateTime @default(now())
+  version   Int      @default(1)
+
+  beneficiaryId String
+  beneficiary   Beneficiary @relation(fields: [beneficiaryId], references: [id])
+
+  evaluatorId String
+  evaluator   User @relation(fields: [evaluatorId], references: [id])
+
+  // Comportament observat
+  communicationLevel String @default("mediu")  // mic/mediu/bun
+  stressReaction     String @default("calm")   // calm/agitat/crize
+  sociability        String @default("sociabil") // retras/sociabil/agresiv
+  autonomy           String @default("partial")  // dependent/partial/independent
+  sleepQuality       String @default("bun")    // bun/slab
+  appetite           String @default("normal") // normal/scazut
+
+  // Stare emotionala
+  sadness    Boolean @default(false)
+  anxiety    Boolean @default(false)
+  anger      Boolean @default(false)
+  apathy     Boolean @default(false)
+  hope       Boolean @default(false)
+
+  // Observatii libere
+  observations String?
+
+  // Raport AI generat
+  aiReport   String? // JSON cu raportul complet
+  aiGeneratedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ==================== FARMACIE INTERNA ====================
+
+model MedicationCategory {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String?
+  icon        String?
+  color       String @default("#3B82F6")
+
+  medications Medication[]
+}
+
+model Medication {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  dosage      String?  // dozaj recomandat
+  stock       Int      @default(0)
+  minStock    Int      @default(5) // alertare stoc minim
+  unit        String   @default("cutii") // cutii/tablete/fiole
+  expiryDate  DateTime?
+  notes       String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  categoryId String
+  category   MedicationCategory @relation(fields: [categoryId], references: [id])
+
+  logs MedicationLog[]
+}
+
+model MedicationLog {
+  id        String   @id @default(cuid())
+  action    String   // adaugare/eliberare/ajustare
+  quantity  Int
+  reason    String?
+  date      DateTime @default(now())
+
+  medicationId String
+  medication   Medication @relation(fields: [medicationId], references: [id])
+
+  userId String
+  user   User @relation(fields: [userId], references: [id])
+}
+
+// ==================== AUDIT / GDPR ====================
+
+model AccessLog {
+  id        String   @id @default(cuid())
+  action    String   // login/view/edit/export/delete
+  resource  String   // beneficiary/evaluation/medication
+  resourceId String?
+  details   String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id])
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Casa Nicolae - Hub Intern",
+  "short_name": "Casa Nicolae",
+  "description": "Hub intern HAPPY pentru Casa Nicolae",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#6366f1",
+  "orientation": "portrait",
+  "icons": []
+}
