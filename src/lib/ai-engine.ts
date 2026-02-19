@@ -40,13 +40,38 @@ export interface AIReport {
   generatedAt: string;
 }
 
-// ---------- SHARED: call Claude API ----------
-async function callClaude(systemPrompt: string, userPrompt: string): Promise<string> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey || apiKey === "your-anthropic-api-key-here") {
-    throw new Error("NO_API_KEY");
+// ---------- SHARED: get API key from DB or env ----------
+import { getConfig } from "./config";
+
+async function getApiKey(): Promise<{ provider: string; key: string } | null> {
+  // Try Anthropic first (preferred)
+  const anthropicKey = await getConfig("ANTHROPIC_API_KEY");
+  if (anthropicKey && anthropicKey !== "your-anthropic-api-key-here") {
+    return { provider: "anthropic", key: anthropicKey };
   }
 
+  // Try OpenAI
+  const openaiKey = await getConfig("OPENAI_API_KEY");
+  if (openaiKey && openaiKey !== "your-openai-api-key-here") {
+    return { provider: "openai", key: openaiKey };
+  }
+
+  return null;
+}
+
+// ---------- SHARED: call AI API (supports Anthropic + OpenAI) ----------
+export async function callAI(systemPrompt: string, userPrompt: string): Promise<string> {
+  const credentials = await getApiKey();
+  if (!credentials) throw new Error("NO_API_KEY");
+
+  if (credentials.provider === "anthropic") {
+    return callClaude(credentials.key, systemPrompt, userPrompt);
+  } else {
+    return callOpenAI(credentials.key, systemPrompt, userPrompt);
+  }
+}
+
+async function callClaude(apiKey: string, systemPrompt: string, userPrompt: string): Promise<string> {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -70,6 +95,33 @@ async function callClaude(systemPrompt: string, userPrompt: string): Promise<str
 
   const result = await response.json();
   return result.content[0].text;
+}
+
+async function callOpenAI(apiKey: string, systemPrompt: string, userPrompt: string): Promise<string> {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.3,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    console.error("OpenAI API error:", err);
+    throw new Error("OPENAI_API_ERROR");
+  }
+
+  const result = await response.json();
+  return result.choices[0].message.content;
 }
 
 // ---------- PROFIL PSIHOSOCIAL ----------
@@ -129,11 +181,11 @@ Răspunde STRICT în acest format JSON (fără alte texte):
   "generatedAt": "${new Date().toISOString()}"
 }`;
 
-  const text = await callClaude(systemPrompt, userPrompt);
+  const text = await callAI(systemPrompt, userPrompt);
 
   // Extract JSON from response (handle if wrapped in markdown)
   const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("Invalid JSON response from Claude");
+  if (!jsonMatch) throw new Error("Invalid JSON response");
 
   const report = JSON.parse(jsonMatch[0]) as AIReport;
   report.generatedAt = new Date().toISOString();
@@ -230,9 +282,9 @@ Răspunde STRICT în acest format JSON:
   "generatedAt": "${now.toISOString()}"
 }`;
 
-  const text = await callClaude(systemPrompt, userPrompt);
+  const text = await callAI(systemPrompt, userPrompt);
   const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("Invalid JSON from Claude");
+  if (!jsonMatch) throw new Error("Invalid JSON response");
 
   const insight = JSON.parse(jsonMatch[0]) as PharmacyInsight;
   insight.generatedAt = now.toISOString();

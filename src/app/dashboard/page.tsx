@@ -203,6 +203,24 @@ export default function DashboardPage() {
         </Link>
       </div>
 
+      {/* Chat AI card - prominent */}
+      <Link href="/chat">
+        <div className="bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-600 rounded-2xl p-4 mb-6 flex items-center gap-4 active:scale-[0.98] transition-all shadow-md">
+          <div className="bg-white/20 p-3 rounded-xl">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <h3 className="font-bold text-white text-sm">Chat AI</h3>
+            <p className="text-violet-100 text-xs">Intreaba orice despre beneficiari, medicamente, proceduri</p>
+          </div>
+          <svg className="w-5 h-5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </Link>
+
       {/* Section: Altele */}
       <div className="mb-2">
         <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider px-1">Altele</h2>
@@ -267,6 +285,32 @@ export default function DashboardPage() {
           </div>
         </Link>
       </div>
+
+      {/* Admin: Setari */}
+      {user?.role === "admin" && (
+        <div className="mb-6">
+          <div className="mb-2">
+            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider px-1">Admin</h2>
+          </div>
+          <Link href="/setari">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4 active:scale-[0.98] transition-all">
+              <div className="bg-gradient-to-br from-gray-600 to-gray-700 p-3 rounded-xl shadow-sm">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-900 text-sm">Setari & Chei API</h3>
+                <p className="text-xs text-gray-400">Configureaza AI, Twilio SMS</p>
+              </div>
+              <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </Link>
+        </div>
+      )}
 
       {/* Logout */}
       <button
