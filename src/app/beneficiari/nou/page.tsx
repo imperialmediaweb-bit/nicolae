@@ -112,11 +112,24 @@ export default function BeneficiarNouPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <input type="checkbox" id="consent" checked={form.hasConsent}
-                  onChange={(e) => update("hasConsent", e.target.checked)}
-                  className="h-4 w-4 text-indigo-600 rounded" />
-                <label htmlFor="consent" className="text-sm text-gray-700">Consimtamant GDPR obtinut</label>
+              <div className="mt-2 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <input type="checkbox" id="consent" checked={form.hasConsent}
+                    onChange={(e) => update("hasConsent", e.target.checked)}
+                    className="h-5 w-5 text-indigo-600 rounded mt-0.5 flex-shrink-0" />
+                  <label htmlFor="consent" className="text-sm text-gray-700 leading-relaxed">
+                    <span className="font-semibold text-gray-900">Consimtamant GDPR *</span>
+                    <br />
+                    Beneficiarul (sau reprezentantul legal) si-a dat acordul explicit pentru prelucrarea
+                    datelor personale, inclusiv date privind starea de sanatate si situatia sociala,
+                    in scopul furnizarii serviciilor de asistenta sociala. Datele pot fi procesate
+                    prin instrumente digitale, inclusiv inteligenta artificiala, pentru generarea de
+                    profile orientative de sprijin (care nu constituie diagnostic medical sau psihologic).
+                  </label>
+                </div>
+                {!form.hasConsent && (
+                  <p className="text-xs text-amber-600 mt-2 ml-8">Acordul GDPR este obligatoriu pentru inregistrarea beneficiarului.</p>
+                )}
               </div>
             </div>
           )}
@@ -210,7 +223,8 @@ export default function BeneficiarNouPage() {
 
             {step < 3 ? (
               <button onClick={() => setStep(step + 1)}
-                className="flex-1 bg-indigo-600 text-white py-3 rounded-2xl font-semibold text-sm active:scale-[0.98] transition-all">
+                disabled={step === 1 && (!form.code || !form.firstName || !form.lastName || !form.age || !form.location || !form.hasConsent)}
+                className="flex-1 bg-indigo-600 text-white py-3 rounded-2xl font-semibold text-sm active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100">
                 Urmatorul pas
               </button>
             ) : (
