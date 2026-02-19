@@ -40,68 +40,68 @@ export interface AIReport {
   generatedAt: string;
 }
 
-export async function generateAIReport(
-  data: EvaluationData
-): Promise<AIReport> {
-  // If OpenAI API key is configured, use it
-  if (
-    process.env.OPENAI_API_KEY &&
-    process.env.OPENAI_API_KEY !== "your-openai-api-key-here"
-  ) {
-    return await generateWithOpenAI(data);
+// ---------- SHARED: call Claude API ----------
+async function callClaude(systemPrompt: string, userPrompt: string): Promise<string> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey || apiKey === "your-anthropic-api-key-here") {
+    throw new Error("NO_API_KEY");
   }
 
-  // Otherwise, use rule-based generation
-  return generateRuleBased(data);
-}
-
-async function generateWithOpenAI(data: EvaluationData): Promise<AIReport> {
-  const prompt = buildPrompt(data);
-
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: `Ești un asistent social specializat în crearea profilurilor orientative de sprijin.
-NU pui diagnostice medicale sau psihologice.
-Folosești limbaj non-stigmatizant și orientat spre sprijin.
-Răspunzi DOAR în format JSON valid.
-Limba: română.`,
-        },
-        { role: "user", content: prompt },
-      ],
-      temperature: 0.3,
+      model: "claude-sonnet-4-5-20250929",
+      max_tokens: 2048,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }],
     }),
   });
 
+  if (!response.ok) {
+    const err = await response.text();
+    console.error("Claude API error:", err);
+    throw new Error("CLAUDE_API_ERROR");
+  }
+
   const result = await response.json();
+  return result.content[0].text;
+}
+
+// ---------- PROFIL PSIHOSOCIAL ----------
+export async function generateAIReport(data: EvaluationData): Promise<AIReport> {
   try {
-    return JSON.parse(result.choices[0].message.content);
-  } catch {
+    return await generateWithClaude(data);
+  } catch (error) {
+    console.error("AI generation failed, using rule-based:", error);
     return generateRuleBased(data);
   }
 }
 
-function buildPrompt(data: EvaluationData): string {
+async function generateWithClaude(data: EvaluationData): Promise<AIReport> {
+  const systemPrompt = `Ești un asistent social specializat în crearea profilurilor orientative de sprijin pentru persoane vulnerabile.
+NU pui diagnostice medicale sau psihologice.
+Folosești limbaj non-stigmatizant, empatic și orientat spre sprijin.
+Răspunzi DOAR în format JSON valid, fără markdown, fără backticks.
+Limba: română.`;
+
   const { beneficiary: b, evaluation: e } = data;
-  return `Creează un profil psihosocial orientativ (NU diagnostic) pentru:
+  const userPrompt = `Creează un profil psihosocial orientativ (NU diagnostic) bazat pe datele de mai jos.
 
-Persoană: ${b.firstName}, ${b.age} ani, ${b.sex === "M" ? "masculin" : "feminin"}
-Locație: ${b.location}
-Familie: ${b.hasFamily} | Locuire: ${b.housingStatus}
-Contact familie: ${b.familyContactFreq || "necunoscut"}
-Istoric instituționalizare: ${b.institutionHistory || "necunoscut"}
-Condiții medicale: ${b.knownDiseases || "nu"} | Medicație: ${b.medication || "nu"}
-Limitări: ${b.disabilities || "nu"} | Evaluare psihologică anterioară: ${b.priorPsychEval}
+PERSOANA:
+- Nume: ${b.firstName} ${b.lastName}, ${b.age} ani, ${b.sex === "M" ? "masculin" : "feminin"}
+- Locație: ${b.location}
+- Familie: ${b.hasFamily} | Tip locuire: ${b.housingStatus}
+- Contact cu familia: ${b.familyContactFreq || "necunoscut"}
+- Istoric instituționalizare: ${b.institutionHistory || "nu"}
+- Boli cunoscute: ${b.knownDiseases || "nu"} | Medicație: ${b.medication || "nu"}
+- Dizabilități: ${b.disabilities || "nu"} | Evaluare psihologică anterioară: ${b.priorPsychEval}
 
-Comportament observat:
+COMPORTAMENT OBSERVAT:
 - Comunicare: ${e.communicationLevel}
 - Reacție la stres: ${e.stressReaction}
 - Sociabilitate: ${e.sociability}
@@ -109,31 +109,231 @@ Comportament observat:
 - Somn: ${e.sleepQuality}
 - Apetit: ${e.appetite}
 
-Stare emoțională:
-- Tristețe: ${e.sadness ? "da" : "nu"}
+STARE EMOȚIONALĂ:
+- Tristețe frecventă: ${e.sadness ? "da" : "nu"}
 - Anxietate: ${e.anxiety ? "da" : "nu"}
 - Furie: ${e.anger ? "da" : "nu"}
 - Apatie: ${e.apathy ? "da" : "nu"}
 - Speranță/motivație: ${e.hope ? "da" : "nu"}
 
-Observații: ${e.observations || "fără"}
+Observații evaluator: ${e.observations || "fără"}
 
-Răspunde în JSON:
+Răspunde STRICT în acest format JSON (fără alte texte):
 {
-  "contextPersonal": "...",
-  "profilEmotional": "...",
-  "nevoiPrincipale": ["...", "..."],
-  "riscuri": ["...", "..."],
-  "recomandariPersonal": ["...", "..."],
-  "planSprijin": ["...", "..."],
+  "contextPersonal": "paragraf narativ despre context personal, situație socială, istoric",
+  "profilEmotional": "paragraf despre starea emoțională observată, pattern-uri comportamentale",
+  "nevoiPrincipale": ["nevoie 1", "nevoie 2", "..."],
+  "riscuri": ["risc identificat 1", "risc 2", "..."],
+  "recomandariPersonal": ["recomandare pentru personal 1", "recomandare 2", "..."],
+  "planSprijin": ["pas 1 din plan", "pas 2", "..."],
   "generatedAt": "${new Date().toISOString()}"
 }`;
+
+  const text = await callClaude(systemPrompt, userPrompt);
+
+  // Extract JSON from response (handle if wrapped in markdown)
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("Invalid JSON response from Claude");
+
+  const report = JSON.parse(jsonMatch[0]) as AIReport;
+  report.generatedAt = new Date().toISOString();
+  return report;
 }
 
+// ---------- ANALIZA FARMACIE AI ----------
+export interface PharmacyInsight {
+  sumarGeneral: string;
+  alerteUrgente: string[];
+  recomandari: string[];
+  trenduri: string[];
+  generatedAt: string;
+}
+
+interface MedicationForAnalysis {
+  name: string;
+  stock: number;
+  minStock: number;
+  unit: string;
+  expiryDate: string | null;
+  category: string;
+  logs: Array<{
+    action: string;
+    quantity: number;
+    date: string;
+  }>;
+}
+
+export async function generatePharmacyInsights(
+  medications: MedicationForAnalysis[]
+): Promise<PharmacyInsight> {
+  try {
+    return await generatePharmacyWithClaude(medications);
+  } catch (error) {
+    console.error("Pharmacy AI failed, using rule-based:", error);
+    return generatePharmacyRuleBased(medications);
+  }
+}
+
+async function generatePharmacyWithClaude(medications: MedicationForAnalysis[]): Promise<PharmacyInsight> {
+  const systemPrompt = `Ești un farmacist-șef inteligent care analizează stocul de medicamente al unui centru social.
+Analizezi datele și dai RECOMANDĂRI PRACTICE, SCURTE și CLARE.
+Identifici probleme, trenduri de consum, și medicamente care ar putea ajunge la 0.
+Răspunzi DOAR în format JSON valid, fără markdown, fără backticks.
+Limba: română. Fii concis - maxim 1-2 propoziții per item.`;
+
+  const now = new Date();
+
+  const medsData = medications.map(m => {
+    const daysToExpiry = m.expiryDate
+      ? Math.ceil((new Date(m.expiryDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+
+    // Calculate daily consumption from release logs
+    const releaseLogs = m.logs.filter(l => l.action === "eliberare");
+    const totalReleased = releaseLogs.reduce((sum, l) => sum + l.quantity, 0);
+    const oldestLog = releaseLogs.length > 0
+      ? new Date(releaseLogs[releaseLogs.length - 1].date)
+      : null;
+    const daySpan = oldestLog
+      ? Math.max(1, Math.ceil((now.getTime() - oldestLog.getTime()) / (1000 * 60 * 60 * 24)))
+      : 0;
+    const dailyConsumption = daySpan > 0 ? (totalReleased / daySpan).toFixed(1) : "0";
+    const daysUntilEmpty = daySpan > 0 && parseFloat(dailyConsumption) > 0
+      ? Math.floor(m.stock / parseFloat(dailyConsumption))
+      : null;
+
+    return {
+      nume: m.name,
+      categorie: m.category,
+      stoc: m.stock,
+      stocMinim: m.minStock,
+      unitate: m.unit,
+      zileExpirare: daysToExpiry,
+      consumZilnic: dailyConsumption,
+      zileRamase: daysUntilEmpty,
+      nrEliberari: releaseLogs.length,
+    };
+  });
+
+  const userPrompt = `Analizează stocul farmaciei (${medications.length} medicamente):
+
+${JSON.stringify(medsData, null, 2)}
+
+Data curentă: ${now.toISOString().split("T")[0]}
+
+Răspunde STRICT în acest format JSON:
+{
+  "sumarGeneral": "1-2 propoziții despre starea generală a farmaciei",
+  "alerteUrgente": ["alerta urgentă 1 (stoc critic, expirate, etc.)", "..."],
+  "recomandari": ["recomandare practică 1", "recomandare 2", "..."],
+  "trenduri": ["trend observat 1 (consum mare la X, etc.)", "..."],
+  "generatedAt": "${now.toISOString()}"
+}`;
+
+  const text = await callClaude(systemPrompt, userPrompt);
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("Invalid JSON from Claude");
+
+  const insight = JSON.parse(jsonMatch[0]) as PharmacyInsight;
+  insight.generatedAt = now.toISOString();
+  return insight;
+}
+
+function generatePharmacyRuleBased(medications: MedicationForAnalysis[]): PharmacyInsight {
+  const now = new Date();
+  const alerteUrgente: string[] = [];
+  const recomandari: string[] = [];
+  const trenduri: string[] = [];
+
+  const lowStock = medications.filter(m => m.stock <= m.minStock);
+  const zeroStock = medications.filter(m => m.stock === 0);
+
+  // Check expiry
+  const expiringSoon = medications.filter(m => {
+    if (!m.expiryDate) return false;
+    const days = Math.ceil((new Date(m.expiryDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return days <= 30 && days > 0;
+  });
+  const expired = medications.filter(m => {
+    if (!m.expiryDate) return false;
+    return new Date(m.expiryDate) < now;
+  });
+
+  // Alerte urgente
+  if (zeroStock.length > 0) {
+    alerteUrgente.push(`${zeroStock.length} medicamente cu stoc ZERO: ${zeroStock.map(m => m.name).join(", ")}`);
+  }
+  if (lowStock.length > zeroStock.length) {
+    const onlyLow = lowStock.filter(m => m.stock > 0);
+    alerteUrgente.push(`${onlyLow.length} medicamente sub stocul minim: ${onlyLow.map(m => `${m.name} (${m.stock}/${m.minStock})`).join(", ")}`);
+  }
+  if (expired.length > 0) {
+    alerteUrgente.push(`${expired.length} medicamente EXPIRATE: ${expired.map(m => m.name).join(", ")} - trebuie retrase imediat!`);
+  }
+  if (expiringSoon.length > 0) {
+    alerteUrgente.push(`${expiringSoon.length} medicamente expiră în 30 zile: ${expiringSoon.map(m => m.name).join(", ")}`);
+  }
+
+  // Consumption analysis
+  medications.forEach(m => {
+    const releaseLogs = m.logs.filter(l => l.action === "eliberare");
+    const totalReleased = releaseLogs.reduce((sum, l) => sum + l.quantity, 0);
+
+    if (releaseLogs.length >= 3) {
+      const oldestLog = new Date(releaseLogs[releaseLogs.length - 1].date);
+      const daySpan = Math.max(1, Math.ceil((now.getTime() - oldestLog.getTime()) / (1000 * 60 * 60 * 24)));
+      const dailyRate = totalReleased / daySpan;
+
+      if (dailyRate > 0 && m.stock > 0) {
+        const daysLeft = Math.floor(m.stock / dailyRate);
+        if (daysLeft <= 7) {
+          trenduri.push(`${m.name}: la ritmul actual de consum, stocul se termină în ~${daysLeft} zile`);
+        }
+      }
+
+      if (dailyRate > 2) {
+        trenduri.push(`${m.name}: consum ridicat (${dailyRate.toFixed(1)} ${m.unit}/zi)`);
+      }
+    }
+  });
+
+  // Recomandari
+  if (lowStock.length > 0) {
+    recomandari.push(`Comandă urgentă pentru: ${lowStock.map(m => m.name).join(", ")}`);
+  }
+  if (expired.length > 0) {
+    recomandari.push("Retrage imediat medicamentele expirate și înregistrează ajustarea de stoc");
+  }
+  if (expiringSoon.length > 0) {
+    recomandari.push("Folosește cu prioritate medicamentele care expiră curând (FIFO)");
+  }
+
+  const noLogs = medications.filter(m => m.logs.length === 0 && m.stock > 0);
+  if (noLogs.length > 0) {
+    recomandari.push(`${noLogs.length} medicamente fără mișcare de stoc - verifică dacă mai sunt necesare`);
+  }
+
+  if (alerteUrgente.length === 0) alerteUrgente.push("Nicio alertă urgentă la acest moment");
+  if (recomandari.length === 0) recomandari.push("Stocul este bine gestionat, continuă monitorizarea");
+  if (trenduri.length === 0) trenduri.push("Insuficiente date pentru a detecta trenduri clare");
+
+  const total = medications.length;
+  const okCount = total - lowStock.length;
+  const sumarGeneral = `Farmacie cu ${total} medicamente, din care ${okCount} au stoc suficient. ${lowStock.length > 0 ? `${lowStock.length} necesită reaprovizionare urgentă.` : "Toate stocurile sunt la nivel optim."}`;
+
+  return {
+    sumarGeneral,
+    alerteUrgente,
+    recomandari,
+    trenduri,
+    generatedAt: now.toISOString(),
+  };
+}
+
+// ---------- PROFIL RULE-BASED (fallback) ----------
 function generateRuleBased(data: EvaluationData): AIReport {
   const { beneficiary: b, evaluation: e } = data;
 
-  // Context personal
   const housing =
     b.housingStatus === "fara_adapost"
       ? "persoană fără adăpost"
@@ -153,7 +353,6 @@ function generateRuleBased(data: EvaluationData): AIReport {
       : ""
   } ${b.disabilities ? `Limitări semnalate: ${b.disabilities}.` : ""}`;
 
-  // Profil emotional
   const emotions: string[] = [];
   if (e.sadness) emotions.push("semne de tristețe frecventă");
   if (e.anxiety) emotions.push("manifestări de anxietate");
@@ -173,7 +372,6 @@ function generateRuleBased(data: EvaluationData): AIReport {
       : "Fără semne emoționale deosebite observate."
   } Somn: ${e.sleepQuality}. Apetit: ${e.appetite}.`;
 
-  // Nevoi principale
   const nevoi: string[] = [];
   if (b.hasFamily === "nu" || b.hasFamily === "partial")
     nevoi.push("Nevoie de atașament și stabilitate relațională");
@@ -188,7 +386,6 @@ function generateRuleBased(data: EvaluationData): AIReport {
   if (b.knownDiseases) nevoi.push("Monitorizare și sprijin medical");
   if (nevoi.length === 0) nevoi.push("Menținerea echilibrului actual");
 
-  // Riscuri
   const riscuri: string[] = [];
   if (e.sadness && e.apathy) riscuri.push("Risc de retragere și izolare");
   if (e.anger && e.stressReaction === "crize")
@@ -201,7 +398,6 @@ function generateRuleBased(data: EvaluationData): AIReport {
     riscuri.push("Dificultăți în relațiile interpersonale");
   if (riscuri.length === 0) riscuri.push("Fără riscuri majore identificate la momentul evaluării");
 
-  // Recomandari
   const recomandari: string[] = [
     "Ton calm și structurat în comunicare",
     "Evitarea conflictelor directe",
@@ -216,7 +412,6 @@ function generateRuleBased(data: EvaluationData): AIReport {
     recomandari.push("Atenție la semne de retragere, discuții deschise");
   recomandari.push("Rutină stabilă și predictibilă");
 
-  // Plan sprijin
   const plan: string[] = [];
   if (e.sadness || e.anxiety || e.apathy)
     plan.push("Consiliere individuală săptămânală");

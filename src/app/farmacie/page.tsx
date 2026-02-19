@@ -23,6 +23,14 @@ interface Medication {
   category: { id: string; name: string; color: string };
 }
 
+interface PharmacyInsight {
+  sumarGeneral: string;
+  alerteUrgente: string[];
+  recomandari: string[];
+  trenduri: string[];
+  generatedAt: string;
+}
+
 export default function FarmaciePage() {
   const [medications, setMedications] = useState<Medication[]>([]);
   const [categories, setCategories] = useState<MedCategory[]>([]);
@@ -34,6 +42,11 @@ export default function FarmaciePage() {
   const [stockQty, setStockQty] = useState("");
   const [stockReason, setStockReason] = useState("");
 
+  // AI Insights
+  const [insights, setInsights] = useState<PharmacyInsight | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(false);
+
   useEffect(() => {
     Promise.all([
       fetch("/api/farmacie").then((r) => r.json()),
@@ -44,6 +57,20 @@ export default function FarmaciePage() {
     }).catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  function loadInsights() {
+    if (insights) {
+      setInsightsOpen(!insightsOpen);
+      return;
+    }
+    setInsightsOpen(true);
+    setInsightsLoading(true);
+    fetch("/api/farmacie/insights")
+      .then((r) => r.json())
+      .then((data) => { if (data.sumarGeneral) setInsights(data); })
+      .catch(() => {})
+      .finally(() => setInsightsLoading(false));
+  }
 
   const filtered = medications.filter((m) => {
     const matchesCat = selectedCat === "all" || m.category.id === selectedCat;
@@ -67,6 +94,8 @@ export default function FarmaciePage() {
         setStockModal(null);
         setStockQty("");
         setStockReason("");
+        // Reset insights so next click refetches
+        setInsights(null);
       } else {
         const data = await res.json();
         alert(data.error);
@@ -82,6 +111,116 @@ export default function FarmaciePage() {
         className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-purple-500 to-violet-600 text-white py-3 rounded-2xl font-semibold text-sm mb-4 active:scale-[0.98] transition-all shadow-md">
         + Adauga medicament
       </Link>
+
+      {/* AI Insights button */}
+      <button onClick={loadInsights}
+        className={`w-full mb-4 rounded-2xl border transition-all active:scale-[0.98] overflow-hidden ${
+          insightsOpen ? "border-violet-200 bg-violet-50/50" : "border-gray-100 bg-white shadow-sm"
+        }`}>
+        <div className="flex items-center gap-3 p-4">
+          <div className={`p-2.5 rounded-xl ${insightsOpen ? "bg-violet-100" : "bg-gradient-to-br from-violet-500 to-purple-600"}`}>
+            <svg className={`w-5 h-5 ${insightsOpen ? "text-violet-600" : "text-white"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+          </div>
+          <div className="flex-1 text-left">
+            <p className="font-bold text-sm text-gray-900">Analiza AI Farmacie</p>
+            <p className="text-[11px] text-gray-400">Recomandari inteligente stoc & consum</p>
+          </div>
+          <svg className={`w-5 h-5 text-gray-400 transition-transform ${insightsOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+
+      {/* AI Insights panel */}
+      {insightsOpen && (
+        <div className="mb-5 space-y-3 animate-in">
+          {insightsLoading ? (
+            <div className="bg-white rounded-2xl border border-gray-100 p-6 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600 mx-auto mb-3"></div>
+              <p className="text-sm text-gray-500">AI analizeaza stocul...</p>
+            </div>
+          ) : insights ? (
+            <>
+              {/* Sumar general */}
+              <div className="bg-gradient-to-r from-violet-500 to-purple-600 rounded-2xl p-4 shadow-sm">
+                <div className="flex items-start gap-2">
+                  <svg className="w-5 h-5 text-violet-200 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-white text-sm font-medium">{insights.sumarGeneral}</p>
+                </div>
+              </div>
+
+              {/* Alerte urgente */}
+              {insights.alerteUrgente.length > 0 && !insights.alerteUrgente[0].includes("Nicio alertă") && (
+                <div className="bg-red-50 border border-red-100 rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    <p className="text-xs font-bold text-red-700 uppercase tracking-wider">Alerte urgente</p>
+                  </div>
+                  <ul className="space-y-1.5">
+                    {insights.alerteUrgente.map((a, i) => (
+                      <li key={i} className="text-sm text-red-700 flex items-start gap-2">
+                        <span className="text-red-400 mt-1">•</span>{a}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Trenduri */}
+              {insights.trenduri.length > 0 && !insights.trenduri[0].includes("Insuficiente") && (
+                <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                    <p className="text-xs font-bold text-blue-700 uppercase tracking-wider">Trenduri consum</p>
+                  </div>
+                  <ul className="space-y-1.5">
+                    {insights.trenduri.map((t, i) => (
+                      <li key={i} className="text-sm text-blue-700 flex items-start gap-2">
+                        <span className="text-blue-400 mt-1">•</span>{t}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Recomandari */}
+              {insights.recomandari.length > 0 && (
+                <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Recomandari</p>
+                  </div>
+                  <ul className="space-y-1.5">
+                    {insights.recomandari.map((r, i) => (
+                      <li key={i} className="text-sm text-emerald-700 flex items-start gap-2">
+                        <span className="text-emerald-400 mt-1">•</span>{r}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <p className="text-[10px] text-gray-400 text-center">
+                Generat de AI la {new Date(insights.generatedAt).toLocaleString("ro-RO")}
+              </p>
+            </>
+          ) : (
+            <div className="bg-white rounded-2xl border border-gray-100 p-6 text-center">
+              <p className="text-sm text-gray-500">Nu s-au putut genera insights. Adauga medicamente mai intai.</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Categories */}
       <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
