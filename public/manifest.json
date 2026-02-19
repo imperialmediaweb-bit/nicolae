@@ -1,11 +1,25 @@
 {
-  "name": "Casa Nicolae - Hub Intern",
+  "name": "Casa Nicolae - Hub Intern HAPPY",
   "short_name": "Casa Nicolae",
-  "description": "Hub intern HAPPY pentru Casa Nicolae",
-  "start_url": "/",
+  "description": "Sistem intern de management pentru Casa Nicolae - beneficiari, evaluari, farmacie",
+  "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#f9fafb",
   "theme_color": "#6366f1",
   "orientation": "portrait",
-  "icons": []
+  "categories": ["medical", "health"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }

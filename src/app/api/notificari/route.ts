@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
+import { sendNotification, isTwilioConfigured } from "@/lib/notifications";
 
 export interface Notification {
   id: string;
@@ -96,10 +97,23 @@ export async function GET() {
       return severityOrder[a.severity] - severityOrder[b.severity];
     });
 
+    const criticalNotifs = notifications.filter((n) => n.severity === "critical");
+
+    // Send SMS for critical alerts if Twilio is configured
+    if (criticalNotifs.length > 0) {
+      sendNotification({
+        title: "Alerta Farmacie",
+        body: criticalNotifs.map((n) => n.message).join(" | "),
+        severity: "critical",
+        url: "/farmacie",
+      }).catch(() => {}); // Fire and forget
+    }
+
     return NextResponse.json({
       notifications,
       count: notifications.length,
-      critical: notifications.filter((n) => n.severity === "critical").length,
+      critical: criticalNotifs.length,
+      smsEnabled: isTwilioConfigured(),
     });
   } catch (error) {
     if (error instanceof Error && error.message === "Neautorizat") {
