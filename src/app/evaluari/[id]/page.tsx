@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
+import { useRouter } from "next/navigation";
 import AppLayout from "@/components/AppLayout";
 import Link from "next/link";
 import jsPDF from "jspdf";
@@ -48,10 +49,13 @@ interface EvalData {
 
 export default function EvaluareDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
   const [data, setData] = useState<EvalData | null>(null);
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
   const [regenError, setRegenError] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   function loadData() {
     fetch(`/api/evaluari/${id}`)
@@ -78,6 +82,25 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
       setRegenError("Eroare de conexiune");
     } finally {
       setRegenerating(false);
+    }
+  }
+
+  async function deleteEvaluation() {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/evaluari/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        router.push("/evaluari");
+      } else {
+        const result = await res.json();
+        setRegenError(result.error || "Eroare la ștergere");
+        setShowDeleteConfirm(false);
+      }
+    } catch {
+      setRegenError("Eroare de conexiune");
+      setShowDeleteConfirm(false);
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -496,9 +519,51 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
         )}
       </div>
 
+      {/* Delete button */}
+      <div className="mt-6 mb-4">
+        <button onClick={() => setShowDeleteConfirm(true)}
+          className="w-full bg-white border border-red-200 text-red-500 py-3 rounded-2xl font-medium text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          Sterge aceasta nota
+        </button>
+      </div>
+
       <p className="text-[10px] text-gray-400 text-center px-4 mb-2">
         Nota orientativa interna, generata automat. NU constituie diagnostic medical sau psihologic.
       </p>
+
+      {/* Delete confirmation modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl">
+            <div className="flex justify-center mb-4">
+              <div className="bg-red-100 p-3 rounded-2xl">
+                <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 text-center mb-2">Stergi nota?</h3>
+            <p className="text-sm text-gray-500 text-center mb-6">
+              Nota pentru <strong>{data.beneficiary.firstName} {data.beneficiary.lastName}</strong> din{" "}
+              <strong>{new Date(data.date).toLocaleDateString("ro-RO")}</strong> va fi stearsa permanent.
+              Aceasta actiune nu poate fi anulata.
+            </p>
+            <div className="space-y-2">
+              <button onClick={deleteEvaluation} disabled={deleting}
+                className="w-full bg-red-500 text-white py-3.5 rounded-2xl font-bold text-sm active:scale-[0.98] transition-all disabled:opacity-50">
+                {deleting ? "Se sterge..." : "Da, sterge definitiv"}
+              </button>
+              <button onClick={() => setShowDeleteConfirm(false)} disabled={deleting}
+                className="w-full bg-gray-100 text-gray-700 py-3.5 rounded-2xl font-medium text-sm active:scale-[0.98] transition-all">
+                Anuleaza
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }

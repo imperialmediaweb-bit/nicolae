@@ -106,3 +106,31 @@ export async function POST(
     return NextResponse.json({ error: "Eroare la regenerare" }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await requireAuth(["admin", "asistent", "psiholog"]);
+    const { id } = await params;
+
+    const evaluation = await prisma.evaluation.findUnique({ where: { id } });
+
+    if (!evaluation) {
+      return NextResponse.json({ error: "Nota negăsită" }, { status: 404 });
+    }
+
+    await prisma.evaluation.delete({ where: { id } });
+
+    await logAccess(session.id, "delete", "evaluation", id, "Ștergere evaluare");
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Neautorizat") {
+      return NextResponse.json({ error: "Neautorizat" }, { status: 401 });
+    }
+    console.error("Delete error:", error);
+    return NextResponse.json({ error: "Eroare la ștergere" }, { status: 500 });
+  }
+}
