@@ -156,25 +156,21 @@ function EvaluareNouaContent() {
                   </a>
                 </div>
               ) : (
-                <select value={form.beneficiaryId} onChange={(e) => update("beneficiaryId", e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-gray-900">
-                  <option value="">-- Alege beneficiar --</option>
-                  {beneficiari.map((b) => (
-                    <option key={b.id} value={b.id}>{b.firstName} {b.lastName} ({b.code})</option>
-                  ))}
-                </select>
-                {form.beneficiaryId && (() => {
-                  const selected = beneficiari.find(b => b.id === form.beneficiaryId);
-                  if (selected && !selected.hasConsent) {
-                    return (
-                      <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl">
-                        <p className="text-sm text-red-700 font-medium">Acest beneficiar nu are consimtamant GDPR!</p>
-                        <p className="text-xs text-red-600 mt-1">Nu poti face evaluare fara acord GDPR. Editeaza fisa beneficiarului pentru a adauga acordul.</p>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
+                <>
+                  <select value={form.beneficiaryId} onChange={(e) => update("beneficiaryId", e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-gray-900">
+                    <option value="">-- Alege beneficiar --</option>
+                    {beneficiari.map((b) => (
+                      <option key={b.id} value={b.id}>{b.firstName} {b.lastName} ({b.code})</option>
+                    ))}
+                  </select>
+                  {form.beneficiaryId && !beneficiari.find(b => b.id === form.beneficiaryId)?.hasConsent && (
+                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl">
+                      <p className="text-sm text-red-700 font-medium">Acest beneficiar nu are consimtamant GDPR!</p>
+                      <p className="text-xs text-red-600 mt-1">Nu poti face evaluare fara acord GDPR. Editeaza fisa beneficiarului pentru a adauga acordul.</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
