@@ -50,16 +50,16 @@ async function getApiKey(): Promise<{ provider: string; key: string } | null> {
     return { provider: "anthropic", key: anthropicKey };
   }
 
-  // Try OpenAI
-  const openaiKey = await getConfig("OPENAI_API_KEY");
-  if (openaiKey && openaiKey !== "your-openai-api-key-here") {
-    return { provider: "openai", key: openaiKey };
+  // Try Gemini
+  const geminiKey = await getConfig("GEMINI_API_KEY");
+  if (geminiKey && geminiKey !== "your-gemini-api-key-here") {
+    return { provider: "gemini", key: geminiKey };
   }
 
   return null;
 }
 
-// ---------- SHARED: call AI API (supports Anthropic + OpenAI) ----------
+// ---------- SHARED: call AI API (supports Anthropic + Gemini) ----------
 export async function callAI(systemPrompt: string, userPrompt: string): Promise<string> {
   const credentials = await getApiKey();
   if (!credentials) throw new Error("NO_API_KEY");
@@ -67,7 +67,7 @@ export async function callAI(systemPrompt: string, userPrompt: string): Promise<
   if (credentials.provider === "anthropic") {
     return callClaude(credentials.key, systemPrompt, userPrompt);
   } else {
-    return callOpenAI(credentials.key, systemPrompt, userPrompt);
+    return callGemini(credentials.key, systemPrompt, userPrompt);
   }
 }
 
@@ -97,31 +97,28 @@ async function callClaude(apiKey: string, systemPrompt: string, userPrompt: stri
   return result.content[0].text;
 }
 
-async function callOpenAI(apiKey: string, systemPrompt: string, userPrompt: string): Promise<string> {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: 0.3,
-    }),
-  });
+async function callGemini(apiKey: string, systemPrompt: string, userPrompt: string): Promise<string> {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ parts: [{ text: userPrompt }] }],
+        generationConfig: { temperature: 0.3 },
+      }),
+    }
+  );
 
   if (!response.ok) {
     const err = await response.text();
-    console.error("OpenAI API error:", err);
-    throw new Error("OPENAI_API_ERROR");
+    console.error("Gemini API error:", err);
+    throw new Error("GEMINI_API_ERROR");
   }
 
   const result = await response.json();
-  return result.choices[0].message.content;
+  return result.candidates[0].content.parts[0].text;
 }
 
 // ---------- PROFIL PSIHOSOCIAL ----------
