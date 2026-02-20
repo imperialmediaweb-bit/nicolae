@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AppLayout from "@/components/AppLayout";
+import Link from "next/link";
 
 interface UserItem {
   id: string;
@@ -138,11 +139,33 @@ export default function AdminUseriPage() {
   }
 
   return (
-    <AppLayout title="Gestionare utilizatori" backHref="/dashboard">
-      <button onClick={openNew}
-        className="w-full bg-indigo-600 text-white py-3 rounded-2xl font-semibold text-sm mb-5 active:scale-[0.98] transition-all shadow-md">
-        + Utilizator nou
-      </button>
+    <AppLayout title="Admin" backHref="/dashboard">
+      {/* Setari & Chei API - card prominent */}
+      <Link href="/setari">
+        <div className="bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-600 rounded-2xl p-4 mb-5 flex items-center gap-4 active:scale-[0.98] transition-all shadow-md">
+          <div className="bg-white/20 p-3 rounded-xl">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <h3 className="font-bold text-white text-sm">Setari & Chei API</h3>
+            <p className="text-violet-100 text-xs">Configureaza AI (Claude, Gemini), SMS Twilio</p>
+          </div>
+          <svg className="w-5 h-5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </Link>
+
+      {/* Utilizatori section */}
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider px-1">Utilizatori</h2>
+        <button onClick={openNew}
+          className="bg-indigo-600 text-white px-4 py-2 rounded-xl font-semibold text-xs active:scale-[0.98] transition-all shadow-sm">
+          + Nou
+        </button>
+      </div>
 
       {loading ? (
         <div className="text-center py-12">
