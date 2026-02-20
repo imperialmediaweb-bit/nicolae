@@ -36,6 +36,7 @@ function EvaluareNouaContent() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     beneficiaryId: preselectedId,
+    evalConsent: false,
     communicationLevel: "mediu",
     stressReaction: "calm",
     sociability: "sociabil",
@@ -68,10 +69,11 @@ function EvaluareNouaContent() {
     }
     setSaving(true);
     try {
+      const { evalConsent: _, ...payload } = form;
       const res = await fetch("/api/evaluari", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
         const data = await res.json();
@@ -156,25 +158,35 @@ function EvaluareNouaContent() {
                   </a>
                 </div>
               ) : (
-                <select value={form.beneficiaryId} onChange={(e) => update("beneficiaryId", e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-gray-900">
-                  <option value="">-- Alege beneficiar --</option>
-                  {beneficiari.map((b) => (
-                    <option key={b.id} value={b.id}>{b.firstName} {b.lastName} ({b.code})</option>
-                  ))}
-                </select>
-                {form.beneficiaryId && (() => {
-                  const selected = beneficiari.find(b => b.id === form.beneficiaryId);
-                  if (selected && !selected.hasConsent) {
-                    return (
-                      <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl">
-                        <p className="text-sm text-red-700 font-medium">Acest beneficiar nu are consimtamant GDPR!</p>
-                        <p className="text-xs text-red-600 mt-1">Nu poti face evaluare fara acord GDPR. Editeaza fisa beneficiarului pentru a adauga acordul.</p>
+                <>
+                  <select value={form.beneficiaryId} onChange={(e) => update("beneficiaryId", e.target.value)}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-gray-900">
+                    <option value="">-- Alege beneficiar --</option>
+                    {beneficiari.map((b) => (
+                      <option key={b.id} value={b.id}>{b.firstName} {b.lastName} ({b.code})</option>
+                    ))}
+                  </select>
+                  {form.beneficiaryId && !beneficiari.find(b => b.id === form.beneficiaryId)?.hasConsent && (
+                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl">
+                      <p className="text-sm text-red-700 font-medium">Acest beneficiar nu are consimtamant GDPR!</p>
+                      <p className="text-xs text-red-600 mt-1">Nu poti face evaluare fara acord GDPR. Editeaza fisa beneficiarului pentru a adauga acordul.</p>
+                    </div>
+                  )}
+
+                  {form.beneficiaryId && beneficiari.find(b => b.id === form.beneficiaryId)?.hasConsent && (
+                    <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                      <div className="flex items-start gap-3">
+                        <input type="checkbox" id="evalConsent" checked={form.evalConsent}
+                          onChange={(e) => update("evalConsent", e.target.checked)}
+                          className="h-5 w-5 text-emerald-600 rounded mt-0.5 flex-shrink-0" />
+                        <label htmlFor="evalConsent" className="text-sm text-amber-900 leading-relaxed cursor-pointer">
+                          Beneficiarul a fost informat si este de acord. Nota generata este
+                          orientativa, nu e diagnostic si nu inlocuieste un specialist.
+                        </label>
                       </div>
-                    );
-                  }
-                  return null;
-                })()}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -224,8 +236,8 @@ function EvaluareNouaContent() {
 
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-sm text-blue-700">
-                  Dupa salvare, sistemul AI va genera automat un profil psihosocial orientativ cu recomandari de sprijin.
-                  Acesta NU pune diagnostice, ci ofera un profil orientativ.
+                  Dupa salvare, sistemul va genera automat o nota orientativa interna cu sugestii de sprijin
+                  pentru echipa. Aceasta NU este un diagnostic si NU inlocuieste evaluarea unui specialist.
                 </p>
               </div>
             </div>
@@ -246,14 +258,14 @@ function EvaluareNouaContent() {
 
             {step < 3 ? (
               <button onClick={() => setStep(step + 1)}
-                disabled={step === 1 && (!form.beneficiaryId || !beneficiari.find(b => b.id === form.beneficiaryId)?.hasConsent)}
+                disabled={step === 1 && (!form.beneficiaryId || !beneficiari.find(b => b.id === form.beneficiaryId)?.hasConsent || !form.evalConsent)}
                 className="flex-1 bg-emerald-600 text-white py-3 rounded-2xl font-semibold text-sm active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100">
                 Urmatorul pas
               </button>
             ) : (
               <button onClick={handleSubmit} disabled={saving}
                 className="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white py-3 rounded-2xl font-semibold text-sm disabled:opacity-50 active:scale-[0.98] transition-all">
-                {saving ? "Se genereaza..." : "Genereaza raport AI"}
+                {saving ? "Se genereaza..." : "Genereaza nota orientativa"}
               </button>
             )}
           </div>

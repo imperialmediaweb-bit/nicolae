@@ -80,25 +80,36 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
     { label: "Speranta", value: data.hope },
   ];
 
-  function downloadPDF() {
+  async function downloadPDF() {
     if (!data) return;
+
+    // Load DejaVu Sans font (supports Romanian diacritics)
+    const [fontRegular, fontBold] = await Promise.all([
+      fetch("/fonts/DejaVuSans.ttf").then((r) => r.arrayBuffer()),
+      fetch("/fonts/DejaVuSans-Bold.ttf").then((r) => r.arrayBuffer()),
+    ]);
+
+    function arrayBufferToBase64(buffer: ArrayBuffer): string {
+      const bytes = new Uint8Array(buffer);
+      let binary = "";
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
+    }
+
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+    // Register DejaVu Sans fonts
+    doc.addFileToVFS("DejaVuSans.ttf", arrayBufferToBase64(fontRegular));
+    doc.addFont("DejaVuSans.ttf", "DejaVu", "normal");
+    doc.addFileToVFS("DejaVuSans-Bold.ttf", arrayBufferToBase64(fontBold));
+    doc.addFont("DejaVuSans-Bold.ttf", "DejaVu", "bold");
+
     const pw = doc.internal.pageSize.getWidth();
     const margin = 18;
     const maxW = pw - margin * 2;
     let y = 20;
-
-    // Strip Romanian diacritics for PDF compatibility (Helvetica doesn't support them)
-    function s(text: string): string {
-      return text
-        .replace(/[ăĂ]/g, (c) => c === "ă" ? "a" : "A")
-        .replace(/[âÂ]/g, (c) => c === "â" ? "a" : "A")
-        .replace(/[îÎ]/g, (c) => c === "î" ? "i" : "I")
-        .replace(/[șȘ]/g, (c) => c === "ș" ? "s" : "S")
-        .replace(/[țȚ]/g, (c) => c === "ț" ? "t" : "T")
-        .replace(/[şŞ]/g, (c) => c === "ş" ? "s" : "S")
-        .replace(/[ţŢ]/g, (c) => c === "ţ" ? "t" : "T");
-    }
 
     function checkPage(need: number) {
       if (y + need > 275) { doc.addPage(); y = 20; }
@@ -106,10 +117,10 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
 
     function sectionHeading(text: string) {
       checkPage(14);
-      doc.setFont("helvetica", "bold");
+      doc.setFont("DejaVu", "bold");
       doc.setFontSize(12);
       doc.setTextColor(30, 30, 80);
-      doc.text(s(text), margin, y);
+      doc.text(text, margin, y);
       y += 4;
       doc.setDrawColor(99, 102, 241);
       doc.setLineWidth(0.5);
@@ -119,22 +130,22 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
 
     function labelValue(l: string, v: string) {
       checkPage(8);
-      doc.setFont("helvetica", "bold");
+      doc.setFont("DejaVu", "bold");
       doc.setFontSize(9);
       doc.setTextColor(80, 80, 80);
-      doc.text(s(l) + ":", margin, y);
-      doc.setFont("helvetica", "normal");
+      doc.text(l + ":", margin, y);
+      doc.setFont("DejaVu", "normal");
       doc.setTextColor(30, 30, 30);
-      doc.text(s(v), margin + 42, y);
+      doc.text(v, margin + 42, y);
       y += 6;
     }
 
     function paragraph(text: string) {
       checkPage(12);
-      doc.setFont("helvetica", "normal");
+      doc.setFont("DejaVu", "normal");
       doc.setFontSize(9);
       doc.setTextColor(40, 40, 40);
-      const lines = doc.splitTextToSize(s(text), maxW);
+      const lines = doc.splitTextToSize(text, maxW);
       doc.text(lines, margin, y);
       y += lines.length * 4.5 + 2;
     }
@@ -142,10 +153,10 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
     function bulletList(items: string[], color: [number, number, number] = [40, 40, 40]) {
       items.forEach((item) => {
         checkPage(10);
-        doc.setFont("helvetica", "normal");
+        doc.setFont("DejaVu", "normal");
         doc.setFontSize(9);
         doc.setTextColor(...color);
-        const lines = doc.splitTextToSize(s(item), maxW - 6);
+        const lines = doc.splitTextToSize(item, maxW - 6);
         doc.text("-", margin + 1, y);
         doc.text(lines, margin + 6, y);
         y += lines.length * 4.5 + 1.5;
@@ -155,15 +166,15 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
     // === HEADER ===
     doc.setFillColor(99, 102, 241);
     doc.rect(0, 0, pw, 36, "F");
-    doc.setFont("helvetica", "bold");
+    doc.setFont("DejaVu", "bold");
     doc.setFontSize(16);
     doc.setTextColor(255, 255, 255);
-    doc.text("FISA PSIHOSOCIALA", pw / 2, 14, { align: "center" });
+    doc.text("NOTA ORIENTATIVA INTERNA", pw / 2, 14, { align: "center" });
     doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(s(`${data.beneficiary.lastName} ${data.beneficiary.firstName}  |  Cod: ${data.beneficiary.code}`), pw / 2, 22, { align: "center" });
+    doc.setFont("DejaVu", "normal");
+    doc.text(`${data.beneficiary.lastName} ${data.beneficiary.firstName}  |  Cod: ${data.beneficiary.code}`, pw / 2, 22, { align: "center" });
     doc.setFontSize(8);
-    doc.text(s(`Data evaluare: ${new Date(data.date).toLocaleDateString("ro-RO")}  |  Evaluator: ${data.evaluator.name} (${data.evaluator.role})`), pw / 2, 30, { align: "center" });
+    doc.text(`Data evaluare: ${new Date(data.date).toLocaleDateString("ro-RO")}  |  Evaluator: ${data.evaluator.name} (${data.evaluator.role})`, pw / 2, 30, { align: "center" });
     y = 44;
 
     // === DATE BENEFICIAR ===
@@ -200,37 +211,49 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
     }
     y += 4;
 
-    // === PROFIL AI ===
+    // === NOTA ORIENTATIVA AI ===
     if (report) {
-      sectionHeading("Profil psihosocial orientativ (generat AI)");
+      sectionHeading("Nota orientativa (generata automat)");
 
-      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
-      doc.text(s("1. Context personal"), margin, y); y += 5;
+      // Disclaimer in PDF
+      checkPage(16);
+      doc.setFont("DejaVu", "normal"); doc.setFontSize(7.5); doc.setTextColor(160, 100, 0);
+      const disclaimerLines = doc.splitTextToSize(
+        "Aceasta nota este generata automat pe baza observatiilor personalului si are caracter strict orientativ. " +
+        "NU constituie diagnostic medical, psihologic sau psihiatric si NU inlocuieste evaluarea unui specialist. " +
+        "Este destinata exclusiv uzului intern al echipei de sprijin.",
+        maxW
+      );
+      doc.text(disclaimerLines, margin, y);
+      y += disclaimerLines.length * 3.5 + 4;
+
+      doc.setFont("DejaVu", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
+      doc.text("1. Situatia persoanei", margin, y); y += 5;
       paragraph(report.contextPersonal); y += 2;
 
       checkPage(10);
-      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
-      doc.text(s("2. Profil emotional"), margin, y); y += 5;
+      doc.setFont("DejaVu", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
+      doc.text("2. Observatii ale personalului", margin, y); y += 5;
       paragraph(report.profilEmotional); y += 2;
 
       checkPage(10);
-      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
-      doc.text(s("3. Nevoi principale"), margin, y); y += 5;
+      doc.setFont("DejaVu", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
+      doc.text("3. De ce ar putea avea nevoie", margin, y); y += 5;
       bulletList(report.nevoiPrincipale, [30, 30, 100]); y += 2;
 
       checkPage(10);
-      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
-      doc.text(s("4. Riscuri identificate"), margin, y); y += 5;
-      bulletList(report.riscuri, [180, 30, 30]); y += 2;
+      doc.setFont("DejaVu", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
+      doc.text("4. Aspecte de monitorizat", margin, y); y += 5;
+      bulletList(report.riscuri, [160, 100, 0]); y += 2;
 
       checkPage(10);
-      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
-      doc.text(s("5. Recomandari pentru personal"), margin, y); y += 5;
+      doc.setFont("DejaVu", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
+      doc.text("5. Sugestii pentru echipa", margin, y); y += 5;
       bulletList(report.recomandariPersonal, [20, 120, 50]); y += 2;
 
       checkPage(10);
-      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
-      doc.text(s("6. Plan de sprijin"), margin, y); y += 5;
+      doc.setFont("DejaVu", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
+      doc.text("6. Pasi de sprijin propusi", margin, y); y += 5;
       bulletList(report.planSprijin, [40, 40, 40]);
     }
 
@@ -240,14 +263,14 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
     doc.setDrawColor(200, 200, 200);
     doc.line(margin, y, pw - margin, y);
     y += 5;
-    doc.setFont("helvetica", "italic");
+    doc.setFont("DejaVu", "normal");
     doc.setFontSize(7);
     doc.setTextColor(140, 140, 140);
-    doc.text("Acest profil este orientativ si nu constituie un diagnostic medical sau psihologic.", margin, y);
+    doc.text("Nota strict orientativa, pentru uzul intern al echipei. Nu constituie si nu inlocuieste un diagnostic.", margin, y);
     y += 3.5;
-    doc.text("Scopul este de a oferi sprijin personalului in intelegerea nevoilor beneficiarului.", margin, y);
+    doc.text("Pentru evaluare profesionala, consultati un specialist autorizat (psiholog, medic).", margin, y);
     y += 3.5;
-    doc.text(s(`Document generat la ${new Date().toLocaleString("ro-RO")} | Casa Nicolae`), margin, y);
+    doc.text(`Document generat la ${new Date().toLocaleString("ro-RO")} | Casa Nicolae`, margin, y);
 
     const fileName = `Fisa_${data.beneficiary.lastName}_${data.beneficiary.firstName}_${new Date(data.date).toISOString().slice(0, 10)}.pdf`;
     doc.save(fileName);
@@ -325,24 +348,32 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
                 </svg>
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Profil psihosocial orientativ</h2>
-                <p className="text-xs text-gray-400">Generat la {new Date(report.generatedAt).toLocaleString("ro-RO")} | NU este diagnostic</p>
+                <h2 className="text-lg font-semibold text-gray-900">Nota orientativa interna</h2>
+                <p className="text-xs text-gray-400">Generata la {new Date(report.generatedAt).toLocaleString("ro-RO")} | Document intern, NU este diagnostic</p>
               </div>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
+              <p className="text-xs text-amber-700">
+                Aceasta nota este generata automat pe baza observatiilor personalului si are caracter strict orientativ.
+                NU constituie diagnostic medical, psihologic sau psihiatric si NU inlocuieste evaluarea unui specialist.
+                Este destinata exclusiv uzului intern al echipei de sprijin.
+              </p>
             </div>
 
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">1. Context personal</h3>
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">1. Situatia persoanei</h3>
                 <p className="text-sm text-gray-600 leading-relaxed">{report.contextPersonal}</p>
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">2. Profil emotional</h3>
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">2. Observatii ale personalului</h3>
                 <p className="text-sm text-gray-600 leading-relaxed">{report.profilEmotional}</p>
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">3. Nevoi principale</h3>
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">3. De ce ar putea avea nevoie</h3>
                 <ul className="space-y-1">
                   {report.nevoiPrincipale.map((n, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
@@ -353,29 +384,29 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">4. Riscuri identificate</h3>
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">4. Aspecte de monitorizat</h3>
                 <ul className="space-y-1">
                   {report.riscuri.map((r, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-red-600">
-                      <span className="mt-1">&#x26A0;</span>{r}
+                    <li key={i} className="flex items-start gap-2 text-sm text-amber-700">
+                      <span className="mt-1">&#x2022;</span>{r}
                     </li>
                   ))}
                 </ul>
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">5. Recomandari pentru personal</h3>
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">5. Sugestii pentru echipa</h3>
                 <ul className="space-y-1">
                   {report.recomandariPersonal.map((r, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-green-700">
-                      <span className="mt-1">&#x2713;</span>{r}
+                      <span className="mt-1">&#x2022;</span>{r}
                     </li>
                   ))}
                 </ul>
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">6. Plan de sprijin</h3>
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">6. Pasi de sprijin propusi</h3>
                 <ul className="space-y-1">
                   {report.planSprijin.map((p, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
@@ -387,9 +418,9 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
             </div>
 
             <div className="mt-6 pt-4 border-t border-gray-100">
-              <p className="text-xs text-gray-400 italic">
-                Acest profil este orientativ si nu constituie un diagnostic medical sau psihologic.
-                Scopul este de a oferi sprijin personalului in intelegerea nevoilor beneficiarului.
+              <p className="text-xs text-gray-400">
+                Aceasta nota este strict orientativa, pentru uzul intern al echipei. Nu constituie si nu inlocuieste
+                un diagnostic medical sau psihologic. Pentru evaluare profesionala, consultati un specialist autorizat.
               </p>
             </div>
           </div>
