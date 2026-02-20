@@ -43,32 +43,43 @@ export interface AIReport {
 // ---------- SHARED: get API key from DB or env ----------
 import { getConfig } from "./config";
 
-async function getApiKey(): Promise<{ provider: string; key: string } | null> {
-  // Try Anthropic first (preferred)
+async function getAllApiKeys(): Promise<Array<{ provider: string; key: string }>> {
+  const keys: Array<{ provider: string; key: string }> = [];
+
   const anthropicKey = await getConfig("ANTHROPIC_API_KEY");
   if (anthropicKey && anthropicKey !== "your-anthropic-api-key-here") {
-    return { provider: "anthropic", key: anthropicKey };
+    keys.push({ provider: "anthropic", key: anthropicKey });
   }
 
-  // Try Gemini
   const geminiKey = await getConfig("GEMINI_API_KEY");
   if (geminiKey && geminiKey !== "your-gemini-api-key-here") {
-    return { provider: "gemini", key: geminiKey };
+    keys.push({ provider: "gemini", key: geminiKey });
   }
 
-  return null;
+  return keys;
 }
 
-// ---------- SHARED: call AI API (supports Anthropic + Gemini) ----------
+// ---------- SHARED: call AI with automatic fallback ----------
 export async function callAI(systemPrompt: string, userPrompt: string): Promise<string> {
-  const credentials = await getApiKey();
-  if (!credentials) throw new Error("NO_API_KEY");
+  const providers = await getAllApiKeys();
+  if (providers.length === 0) throw new Error("NO_API_KEY");
 
-  if (credentials.provider === "anthropic") {
-    return callClaude(credentials.key, systemPrompt, userPrompt);
-  } else {
-    return callGemini(credentials.key, systemPrompt, userPrompt);
+  let lastError: Error | null = null;
+
+  for (const { provider, key } of providers) {
+    try {
+      if (provider === "anthropic") {
+        return await callClaude(key, systemPrompt, userPrompt);
+      } else {
+        return await callGemini(key, systemPrompt, userPrompt);
+      }
+    } catch (err) {
+      console.warn(`Provider ${provider} failed, trying next...`, err);
+      lastError = err instanceof Error ? err : new Error(String(err));
+    }
   }
+
+  throw lastError ?? new Error("ALL_PROVIDERS_FAILED");
 }
 
 async function callClaude(apiKey: string, systemPrompt: string, userPrompt: string): Promise<string> {
