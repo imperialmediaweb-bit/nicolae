@@ -17,28 +17,25 @@ export async function POST() {
       return NextResponse.json({ message: "Deja populat" });
     }
 
-    const hashedPassword = await hashPassword("admin123");
-    const staffPassword = await hashPassword("staff123");
+    const adminPassword = await hashPassword("admin123");
+    const userPassword = await hashPassword("user123");
 
     await prisma.user.create({
       data: {
         username: "admin",
-        password: hashedPassword,
+        password: adminPassword,
         name: "Administrator",
         role: "admin",
       },
     });
 
     await prisma.user.create({
-      data: { username: "psiholog1", password: staffPassword, name: "Maria Popescu", role: "psiholog" },
-    });
-
-    await prisma.user.create({
-      data: { username: "asistent1", password: staffPassword, name: "Ion Ionescu", role: "asistent" },
-    });
-
-    await prisma.user.create({
-      data: { username: "farmacist1", password: staffPassword, name: "Elena Dumitrescu", role: "farmacist" },
+      data: {
+        username: "utilizator",
+        password: userPassword,
+        name: "Utilizator General",
+        role: "asistent",
+      },
     });
 
     const categories = [
@@ -63,10 +60,8 @@ export async function POST() {
     return NextResponse.json({
       message: "Seed completat!",
       accounts: [
-        "admin / admin123 (Administrator)",
-        "psiholog1 / staff123 (Psiholog)",
-        "asistent1 / staff123 (Asistent)",
-        "farmacist1 / staff123 (Farmacist)",
+        "admin / admin123 (Administrator - acces complet, setari, useri)",
+        "utilizator / user123 (Utilizator General - beneficiari, note, farmacie)",
       ],
     });
   } catch (error) {
