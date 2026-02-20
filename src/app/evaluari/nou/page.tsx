@@ -15,7 +15,7 @@ interface Beneficiary {
 export default function EvaluareNouaPage() {
   return (
     <Suspense fallback={
-      <AppLayout title="Evaluare noua" backHref="/evaluari">
+      <AppLayout title="Nota orientativa noua" backHref="/evaluari">
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto"></div>
         </div>
@@ -125,7 +125,7 @@ function EvaluareNouaContent() {
   }
 
   return (
-    <AppLayout title="Evaluare noua" backHref="/evaluari">
+    <AppLayout title="Nota orientativa noua" backHref="/evaluari">
       {/* Step indicator */}
       <div className="flex items-center gap-1 mb-6">
         {["Beneficiar", "Comportament", "Stare emotionala"].map((label, i) => (
@@ -148,7 +148,7 @@ function EvaluareNouaContent() {
                     </svg>
                   </div>
                   <p className="text-gray-900 font-semibold mb-1">Niciun beneficiar in sistem</p>
-                  <p className="text-sm text-gray-500 mb-5">Trebuie sa adaugi cel putin un beneficiar<br />inainte de a crea o evaluare.</p>
+                  <p className="text-sm text-gray-500 mb-5">Trebuie sa adaugi cel putin un beneficiar<br />inainte de a crea o nota orientativa.</p>
                   <a href="/beneficiari/nou"
                     className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white px-5 py-3 rounded-2xl font-semibold text-sm active:scale-[0.97] transition-all shadow-sm">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -169,7 +169,7 @@ function EvaluareNouaContent() {
                   {form.beneficiaryId && !beneficiari.find(b => b.id === form.beneficiaryId)?.hasConsent && (
                     <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl">
                       <p className="text-sm text-red-700 font-medium">Acest beneficiar nu are consimtamant GDPR!</p>
-                      <p className="text-xs text-red-600 mt-1">Nu poti face evaluare fara acord GDPR. Editeaza fisa beneficiarului pentru a adauga acordul.</p>
+                      <p className="text-xs text-red-600 mt-1">Nu poti crea nota orientativa fara acord GDPR. Editeaza fisa beneficiarului pentru a adauga acordul.</p>
                     </div>
                   )}
 

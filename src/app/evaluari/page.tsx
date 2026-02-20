@@ -32,10 +32,10 @@ export default function EvaluariPage() {
   }, []);
 
   return (
-    <AppLayout title="Evaluari" backHref="/dashboard">
+    <AppLayout title="Note orientative" backHref="/dashboard">
       <Link href="/evaluari/nou"
         className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-emerald-500 to-green-600 text-white py-3 rounded-2xl font-semibold text-sm mb-4 active:scale-[0.98] transition-all shadow-md">
-        + Evaluare noua
+        + Nota noua
       </Link>
 
       {loading ? (
@@ -44,7 +44,7 @@ export default function EvaluariPage() {
         </div>
       ) : evaluari.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-          <p className="text-gray-500">Nicio evaluare inca</p>
+          <p className="text-gray-500">Nicio nota orientativa inca</p>
         </div>
       ) : (
         <div className="space-y-3">

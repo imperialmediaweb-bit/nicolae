@@ -19,7 +19,7 @@ export async function GET(
     });
 
     if (!evaluation) {
-      return NextResponse.json({ error: "Evaluare negăsită" }, { status: 404 });
+      return NextResponse.json({ error: "Nota negăsită" }, { status: 404 });
     }
 
     await logAccess(session.id, "view", "evaluation", id);

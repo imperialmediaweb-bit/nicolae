@@ -224,11 +224,11 @@ function RapoarteContent() {
     <AppLayout title="Rapoarte PDF" backHref="/dashboard">
       <div className="space-y-4">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="font-semibold text-gray-900 mb-3">Selecteaza evaluarea</h2>
+          <h2 className="font-semibold text-gray-900 mb-3">Selecteaza nota orientativa</h2>
           {loading ? (
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mx-auto"></div>
           ) : evaluations.length === 0 ? (
-            <p className="text-sm text-gray-500">Nicio evaluare disponibila</p>
+            <p className="text-sm text-gray-500">Nicio nota orientativa disponibila</p>
           ) : (
             <div className="space-y-2">
               {evaluations.map((ev) => (
@@ -300,7 +300,7 @@ function RapoarteContent() {
             </div>
           ) : (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-              <p className="text-gray-500">Selecteaza o evaluare pentru a vedea raportul si a genera PDF</p>
+              <p className="text-gray-500">Selecteaza o nota orientativa pentru a vedea raportul si a genera PDF</p>
             </div>
           )}
         </div>
