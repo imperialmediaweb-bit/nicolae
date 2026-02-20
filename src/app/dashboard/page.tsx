@@ -7,7 +7,7 @@ import HappyLogo from "@/components/HappyLogo";
 
 interface Stats {
   beneficiari: number;
-  evaluari: number;
+  note: number;
   medicamente: number;
   alerteStoc: number;
   categorii: number;
@@ -24,7 +24,7 @@ interface MedicationItem {
 
 export default function DashboardPage() {
   const user = useUser();
-  const [stats, setStats] = useState<Stats>({ beneficiari: 0, evaluari: 0, medicamente: 0, alerteStoc: 0, categorii: 0 });
+  const [stats, setStats] = useState<Stats>({ beneficiari: 0, note: 0, medicamente: 0, alerteStoc: 0, categorii: 0 });
   const [lowStock, setLowStock] = useState<MedicationItem[]>([]);
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export default function DashboardPage() {
       setLowStock(lowStockItems.slice(0, 3));
       setStats({
         beneficiari: Array.isArray(ben) ? ben.length : 0,
-        evaluari: Array.isArray(ev) ? ev.length : 0,
+        note: Array.isArray(ev) ? ev.length : 0,
         medicamente: meds.length,
         alerteStoc: lowStockItems.length,
         categorii: Array.isArray(cat) ? cat.length : 0,
@@ -79,8 +79,8 @@ export default function DashboardPage() {
             <p className="text-[10px] text-indigo-100 font-medium mt-0.5">Beneficiari</p>
           </div>
           <div className="flex-1 bg-white/15 backdrop-blur-sm rounded-2xl p-3 text-center">
-            <p className="text-2xl font-bold text-white">{stats.evaluari}</p>
-            <p className="text-[10px] text-indigo-100 font-medium mt-0.5">Evaluari</p>
+            <p className="text-2xl font-bold text-white">{stats.note}</p>
+            <p className="text-[10px] text-indigo-100 font-medium mt-0.5">Note</p>
           </div>
           <div className="flex-1 bg-white/15 backdrop-blur-sm rounded-2xl p-3 text-center">
             <p className="text-2xl font-bold text-white">{stats.medicamente}</p>
@@ -147,7 +147,7 @@ export default function DashboardPage() {
           </div>
         </Link>
 
-        {/* Card: Evaluari Psihosociale */}
+        {/* Card: Note Orientative */}
         <Link href="/evaluari">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden active:scale-[0.97] transition-all h-full">
             <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-4 pb-5">
@@ -156,13 +156,13 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                 </svg>
               </div>
-              <h3 className="text-white font-bold text-lg leading-tight">Evaluari</h3>
-              <p className="text-emerald-100 text-[11px] mt-1">Profile psihosociale</p>
+              <h3 className="text-white font-bold text-lg leading-tight">Note orientative</h3>
+              <p className="text-emerald-100 text-[11px] mt-1">Observatii si sugestii</p>
             </div>
             <div className="p-3 flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.evaluari}</p>
-                <p className="text-[10px] text-gray-400">evaluari</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.note}</p>
+                <p className="text-[10px] text-gray-400">note</p>
               </div>
               <div className="text-right">
                 <p className="text-lg font-bold text-emerald-600">{stats.beneficiari}</p>
@@ -196,8 +196,8 @@ export default function DashboardPage() {
               </svg>
             </div>
             <div>
-              <p className="text-sm font-semibold text-emerald-900">Evaluare noua</p>
-              <p className="text-[10px] text-emerald-400">Profil psihologic</p>
+              <p className="text-sm font-semibold text-emerald-900">Nota noua</p>
+              <p className="text-[10px] text-emerald-400">Nota orientativa</p>
             </div>
           </div>
         </Link>

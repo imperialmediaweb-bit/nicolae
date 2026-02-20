@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
       "create",
       "evaluation",
       evaluation.id,
-      `Evaluare nouă pentru ${beneficiary.code}`
+      `Notă orientativă nouă pentru ${beneficiary.code}`
     );
 
     const result = await prisma.evaluation.findUnique({
@@ -138,6 +138,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Neautorizat" }, { status: 401 });
     }
     console.error("Create evaluation error:", error);
-    return NextResponse.json({ error: "Eroare la creare evaluare" }, { status: 500 });
+    return NextResponse.json({ error: "Eroare la creare nota orientativa" }, { status: 500 });
   }
 }

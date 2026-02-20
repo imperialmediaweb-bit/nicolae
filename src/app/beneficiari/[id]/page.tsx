@@ -85,7 +85,7 @@ export default function BeneficiarDetailPage({ params }: { params: Promise<{ id:
           href={`/evaluari/nou?beneficiaryId=${data.id}`}
           className="bg-indigo-600 text-white px-4 py-2.5 rounded-lg hover:bg-indigo-700 transition font-medium text-sm"
         >
-          + Evaluare noua
+          + Nota noua
         </Link>
       </div>
 
@@ -150,9 +150,9 @@ export default function BeneficiarDetailPage({ params }: { params: Promise<{ id:
 
           {/* Evaluations */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Evaluari ({data.evaluations.length})</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Note orientative ({data.evaluations.length})</h2>
             {data.evaluations.length === 0 ? (
-              <p className="text-gray-500 text-sm">Nicio evaluare inca.</p>
+              <p className="text-gray-500 text-sm">Nicio nota orientativa inca.</p>
             ) : (
               <div className="space-y-3">
                 {data.evaluations.map((ev) => (
@@ -160,7 +160,7 @@ export default function BeneficiarDetailPage({ params }: { params: Promise<{ id:
                     className="block p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition">
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="font-medium text-gray-900">Evaluare v{ev.version}</p>
+                        <p className="font-medium text-gray-900">Nota v{ev.version}</p>
                         <p className="text-sm text-gray-500">{new Date(ev.date).toLocaleDateString("ro-RO")}</p>
                         <p className="text-xs text-gray-400 mt-1">De: {ev.evaluator.name} ({ev.evaluator.role})</p>
                       </div>
@@ -183,7 +183,7 @@ export default function BeneficiarDetailPage({ params }: { params: Promise<{ id:
             <div className="space-y-2">
               <Link href={`/evaluari/nou?beneficiaryId=${data.id}`}
                 className="block w-full text-center bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition text-sm">
-                Evaluare noua
+                Nota noua
               </Link>
               <Link href={`/rapoarte?beneficiaryId=${data.id}`}
                 className="block w-full text-center bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition text-sm">

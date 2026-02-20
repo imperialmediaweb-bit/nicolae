@@ -16,7 +16,7 @@ const SUGGESTIONS = [
   "Cum abordez un beneficiar agitat?",
   "Tehnici de de-escaladare",
   "Sfaturi pentru comunicarea cu persoane anxioase",
-  "Cum completez o evaluare psihosociala?",
+  "Cum completez o nota orientativa?",
   "Ce fac daca un beneficiar refuza medicatia?",
 ];
 

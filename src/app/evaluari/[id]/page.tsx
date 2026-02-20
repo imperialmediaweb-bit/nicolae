@@ -60,11 +60,11 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
   }, [id]);
 
   if (loading) {
-    return <AppLayout title="Detalii evaluare" backHref="/evaluari"><div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div></AppLayout>;
+    return <AppLayout title="Detalii nota" backHref="/evaluari"><div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div></AppLayout>;
   }
 
   if (!data) {
-    return <AppLayout title="Detalii evaluare" backHref="/evaluari"><p className="text-gray-500">Evaluarea nu a fost gasita.</p></AppLayout>;
+    return <AppLayout title="Detalii nota" backHref="/evaluari"><p className="text-gray-500">Nota nu a fost gasita.</p></AppLayout>;
   }
 
   let report: AIReport | null = null;
@@ -277,14 +277,14 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
   }
 
   return (
-    <AppLayout title="Detalii evaluare" backHref="/evaluari">
+    <AppLayout title="Detalii nota" backHref="/evaluari">
       <div className="max-w-4xl mx-auto">
-        <Link href="/evaluari" className="text-sm text-indigo-600 hover:underline">&larr; Inapoi la evaluari</Link>
+        <Link href="/evaluari" className="text-sm text-indigo-600 hover:underline">&larr; Inapoi la note</Link>
 
         <div className="mt-4 mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Evaluare - {data.beneficiary.firstName} {data.beneficiary.lastName}
+              Nota - {data.beneficiary.firstName} {data.beneficiary.lastName}
             </h1>
             <p className="text-gray-500">v{data.version} | {new Date(data.date).toLocaleDateString("ro-RO")} | Evaluator: {data.evaluator.name}</p>
           </div>
