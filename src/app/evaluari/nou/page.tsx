@@ -174,25 +174,14 @@ function EvaluareNouaContent() {
                   )}
 
                   {form.beneficiaryId && beneficiari.find(b => b.id === form.beneficiaryId)?.hasConsent && (
-                    <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-3">
-                      <h3 className="text-sm font-semibold text-amber-900">Acord si informare evaluare</h3>
-                      <div className="text-xs text-amber-800 space-y-2">
-                        <p>Inainte de a continua, va rugam sa confirmati urmatoarele:</p>
-                        <ul className="list-disc ml-4 space-y-1">
-                          <li>Beneficiarul (sau reprezentantul legal) a fost <strong>informat</strong> ca va fi realizata o evaluare psihosociala.</li>
-                          <li>Beneficiarul <strong>si-a exprimat acordul</strong> pentru aceasta evaluare.</li>
-                          <li>Profilul generat de sistemul AI este <strong>strict orientativ</strong> si <strong>nu constituie un diagnostic</strong> medical, psihologic sau psihiatric.</li>
-                          <li>Rezultatele <strong>nu inlocuiesc</strong> evaluarea unui specialist (psiholog, medic, asistent social autorizat).</li>
-                          <li>Profilul are rol de <strong>sprijin intern</strong> pentru personalul care lucreaza cu beneficiarul.</li>
-                        </ul>
-                      </div>
-                      <div className="flex items-start gap-3 pt-1">
+                    <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                      <div className="flex items-start gap-3">
                         <input type="checkbox" id="evalConsent" checked={form.evalConsent}
                           onChange={(e) => update("evalConsent", e.target.checked)}
                           className="h-5 w-5 text-emerald-600 rounded mt-0.5 flex-shrink-0" />
-                        <label htmlFor="evalConsent" className="text-sm text-amber-900 font-medium leading-relaxed cursor-pointer">
-                          Confirm ca beneficiarul a fost informat si este de acord cu evaluarea.
-                          Inteleg ca profilul generat este orientativ si nu inlocuieste un specialist.
+                        <label htmlFor="evalConsent" className="text-sm text-amber-900 leading-relaxed cursor-pointer">
+                          Beneficiarul a fost informat si este de acord. Nota generata este
+                          orientativa, nu e diagnostic si nu inlocuieste un specialist.
                         </label>
                       </div>
                     </div>
