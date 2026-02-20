@@ -50,14 +50,36 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
   const { id } = use(params);
   const [data, setData] = useState<EvalData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [regenerating, setRegenerating] = useState(false);
+  const [regenError, setRegenError] = useState("");
 
-  useEffect(() => {
+  function loadData() {
     fetch(`/api/evaluari/${id}`)
       .then((r) => r.json())
       .then(setData)
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [id]);
+  }
+
+  useEffect(() => { loadData(); }, [id]);
+
+  async function regenerateReport() {
+    setRegenerating(true);
+    setRegenError("");
+    try {
+      const res = await fetch(`/api/evaluari/${id}`, { method: "POST" });
+      const result = await res.json();
+      if (res.ok) {
+        loadData();
+      } else {
+        setRegenError(result.error || "Eroare la regenerare");
+      }
+    } catch {
+      setRegenError("Eroare de conexiune");
+    } finally {
+      setRegenerating(false);
+    }
+  }
 
   if (loading) {
     return <AppLayout title="Detalii nota" backHref="/evaluari"><div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div></AppLayout>;
@@ -288,14 +310,29 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
             </h1>
             <p className="text-gray-500">v{data.version} | {new Date(data.date).toLocaleDateString("ro-RO")} | Evaluator: {data.evaluator.name}</p>
           </div>
-          <button onClick={downloadPDF}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition text-sm flex items-center gap-2 active:scale-95">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Descarca PDF
-          </button>
+          <div className="flex gap-2">
+            <button onClick={regenerateReport} disabled={regenerating}
+              className="bg-purple-600 text-white px-3 py-2 rounded-lg text-sm flex items-center gap-1.5 active:scale-95 transition disabled:opacity-50">
+              <svg className={`w-4 h-4 ${regenerating ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              {regenerating ? "..." : "Regenereaza AI"}
+            </button>
+            <button onClick={downloadPDF}
+              className="bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm flex items-center gap-1.5 active:scale-95 transition">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              PDF
+            </button>
+          </div>
         </div>
+
+        {regenError && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
+            <p className="text-sm text-red-700">{regenError}</p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Behavior */}
