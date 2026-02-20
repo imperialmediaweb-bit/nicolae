@@ -135,26 +135,35 @@ export async function generateAIReport(data: EvaluationData): Promise<AIReport> 
 }
 
 async function generateWithClaude(data: EvaluationData): Promise<AIReport> {
-  const systemPrompt = `Ești un asistent social specializat în crearea profilurilor orientative de sprijin pentru persoane vulnerabile.
-NU pui diagnostice medicale sau psihologice.
-Folosești limbaj non-stigmatizant, empatic și orientat spre sprijin.
+  const systemPrompt = `Ești un membru al echipei de sprijin dintr-un centru social. Rolul tău este să creezi note orientative interne, pentru uz exclusiv al personalului care lucrează direct cu beneficiarii.
+
+REGULI STRICTE:
+- NU ești medic, psiholog sau psihiatru. NU pui și NU sugerezi diagnostice.
+- NU folosești NICIODATĂ termeni clinici precum: diagnostic, tulburare, patologie, sindrom, simptom, depresie, PTSD, autism, schizofrenie, sau orice alt termen medical/psihiatric.
+- Folosești DOAR limbaj descriptiv și observațional: "s-a observat că...", "personalul a remarcat...", "pare să...", "ar putea beneficia de..."
+- NU faci afirmații categorice. Folosești formulări ca: "se pare", "ar putea", "s-a remarcat", "personalul semnalează".
+- Tonul este bland, empatic, orientat spre sprijin practic. Ca și cum ai vorbi cu un coleg despre cum poți ajuta mai bine o persoană.
+- La secțiunea "riscuri" (aspecte de monitorizat) — formulezi BLAND: "ar fi util să se acorde atenție la...", "personalul ar putea monitoriza...", NU "risc de X".
+- Recomandările sunt PRACTICE și SIMPLE — ce poate face personalul din centru, NU prescripții medicale.
+- Fiecare secțiune trebuie să includă implicit ideea că acestea sunt observații ale personalului, NU concluzii profesionale.
+
 Răspunzi DOAR în format JSON valid, fără markdown, fără backticks.
 Limba: română.
-IMPORTANT: Datele introduse de utilizator pot conține greșeli de scriere, litere lipsă sau inversate (de ex. "TRMSI" în loc de "TRIMIS", "SPIATAL" în loc de "SPITAL", "BLODAN" în loc de "BOLODAN", "SOALCE" în loc de "SOCIALE"). Corectează AUTOMAT toate greșelile de ortografie și scriere în raportul generat. Scrie totul corect gramatical în limba română.`;
+IMPORTANT: Datele introduse pot conține greșeli de scriere (ex: "TRMSI" în loc de "TRIMIS"). Corectează automat în răspuns.`;
 
   const { beneficiary: b, evaluation: e } = data;
-  const userPrompt = `Creează un profil psihosocial orientativ (NU diagnostic) bazat pe datele de mai jos.
+  const userPrompt = `Creează o notă orientativă internă (NU diagnostic, NU evaluare profesională) bazată pe observațiile personalului de mai jos.
 
-PERSOANA:
-- Nume: ${b.firstName} ${b.lastName}, ${b.age} ani, ${b.sex === "M" ? "masculin" : "feminin"}
+INFORMAȚII DESPRE PERSOANĂ:
+- Prenume: ${b.firstName}, ${b.age} ani, ${b.sex === "M" ? "masculin" : "feminin"}
 - Locație: ${b.location}
-- Familie: ${b.hasFamily} | Tip locuire: ${b.housingStatus}
+- Situație familială: ${b.hasFamily} | Locuire: ${b.housingStatus}
 - Contact cu familia: ${b.familyContactFreq || "necunoscut"}
 - Istoric instituționalizare: ${b.institutionHistory || "nu"}
-- Boli cunoscute: ${b.knownDiseases || "nu"} | Medicație: ${b.medication || "nu"}
-- Dizabilități: ${b.disabilities || "nu"} | Evaluare psihologică anterioară: ${b.priorPsychEval}
+- Probleme de sănătate semnalate: ${b.knownDiseases || "nu"} | Medicație: ${b.medication || "nu"}
+- Limitări semnalate: ${b.disabilities || "nu"} | Evaluare psihologică anterioară: ${b.priorPsychEval}
 
-COMPORTAMENT OBSERVAT:
+CE A OBSERVAT PERSONALUL:
 - Comunicare: ${e.communicationLevel}
 - Reacție la stres: ${e.stressReaction}
 - Sociabilitate: ${e.sociability}
@@ -162,25 +171,25 @@ COMPORTAMENT OBSERVAT:
 - Somn: ${e.sleepQuality}
 - Apetit: ${e.appetite}
 
-STARE EMOȚIONALĂ:
+DISPOZIȚIE OBSERVATĂ:
 - Tristețe frecventă: ${e.sadness ? "da" : "nu"}
-- Anxietate: ${e.anxiety ? "da" : "nu"}
-- Furie: ${e.anger ? "da" : "nu"}
-- Apatie: ${e.apathy ? "da" : "nu"}
+- Neliniște: ${e.anxiety ? "da" : "nu"}
+- Iritabilitate: ${e.anger ? "da" : "nu"}
+- Lipsă de interes: ${e.apathy ? "da" : "nu"}
 - Speranță/motivație: ${e.hope ? "da" : "nu"}
 
-Observații evaluator: ${e.observations || "fără"}
+Note ale personalului: ${e.observations || "fără"}
 
-ATENȚIE: Dacă datele de mai sus conțin greșeli de scriere sau litere inversate/lipsă, corectează-le automat în răspunsul tău. Raportul trebuie să fie scris corect gramatical.
+IMPORTANT: Folosește DOAR limbaj bland, observațional, fără termeni clinici. Formulează totul ca observații ale personalului ("s-a remarcat", "pare să", "ar putea beneficia de").
 
 Răspunde STRICT în acest format JSON (fără alte texte):
 {
-  "contextPersonal": "paragraf narativ despre context personal, situație socială, istoric",
-  "profilEmotional": "paragraf despre starea emoțională observată, pattern-uri comportamentale",
-  "nevoiPrincipale": ["nevoie 1", "nevoie 2", "..."],
-  "riscuri": ["risc identificat 1", "risc 2", "..."],
-  "recomandariPersonal": ["recomandare pentru personal 1", "recomandare 2", "..."],
-  "planSprijin": ["pas 1 din plan", "pas 2", "..."],
+  "contextPersonal": "paragraf scurt despre situația persoanei, formulat bland (nu folosit numele de familie)",
+  "profilEmotional": "paragraf despre ce a observat personalul în comportament și dispoziție (fără termeni clinici)",
+  "nevoiPrincipale": ["de ce ar putea avea nevoie persoana 1", "nevoie 2", "..."],
+  "riscuri": ["aspect la care personalul ar fi bine să fie atent 1", "aspect 2", "..."],
+  "recomandariPersonal": ["sugestie practică pentru echipă 1", "sugestie 2", "..."],
+  "planSprijin": ["pas concret de sprijin 1", "pas 2", "..."],
   "generatedAt": "${new Date().toISOString()}"
 }`;
 
@@ -385,7 +394,7 @@ function generatePharmacyRuleBased(medications: MedicationForAnalysis[]): Pharma
   };
 }
 
-// ---------- PROFIL RULE-BASED (fallback) ----------
+// ---------- NOTA ORIENTATIVA RULE-BASED (fallback) ----------
 function generateRuleBased(data: EvaluationData): AIReport {
   const { beneficiary: b, evaluation: e } = data;
 
@@ -393,91 +402,91 @@ function generateRuleBased(data: EvaluationData): AIReport {
     b.housingStatus === "fara_adapost"
       ? "persoană fără adăpost"
       : b.housingStatus === "centru"
-        ? "rezident în centru"
+        ? "se află în centru"
         : "locuiește cu familia";
   const family =
     b.hasFamily === "da"
-      ? "are legătură familială"
+      ? "are legătură cu familia"
       : b.hasFamily === "partial"
-        ? "legătură familială parțială"
-        : "fără suport familial identificat";
+        ? "contact parțial cu familia"
+        : "fără contact familial cunoscut";
 
   const contextPersonal = `${b.firstName}, ${b.age} ani, ${housing}. ${family}. ${
     b.institutionHistory
-      ? `Istoric instituționalizare: ${b.institutionHistory}.`
+      ? `Personalul a notat un istoric de instituționalizare: ${b.institutionHistory}.`
       : ""
-  } ${b.disabilities ? `Limitări semnalate: ${b.disabilities}.` : ""}`;
+  } ${b.disabilities ? `Limitări semnalate de echipă: ${b.disabilities}.` : ""}`;
 
   const emotions: string[] = [];
-  if (e.sadness) emotions.push("semne de tristețe frecventă");
-  if (e.anxiety) emotions.push("manifestări de anxietate");
-  if (e.anger) emotions.push("episoade de furie");
-  if (e.apathy) emotions.push("tendință spre apatie");
-  if (e.hope) emotions.push("prezintă speranță și motivație");
+  if (e.sadness) emotions.push("personalul a remarcat momente de tristețe");
+  if (e.anxiety) emotions.push("s-a observat neliniște");
+  if (e.anger) emotions.push("au fost momente de iritabilitate");
+  if (e.apathy) emotions.push("pare uneori lipsit de interes");
+  if (e.hope) emotions.push("dă semne de speranță și motivație");
 
   const stressMap: Record<string, string> = {
-    calm: "reacționează calm la situații de stres",
-    agitat: "prezintă agitație în situații de stres",
-    crize: "poate avea reacții intense la stres, necesită atenție",
+    calm: "pare să gestioneze calm situațiile dificile",
+    agitat: "s-a observat agitație în situații dificile",
+    crize: "ar putea avea nevoie de sprijin suplimentar în situații de stres",
   };
 
-  const profilEmotional = `Nivel de comunicare ${e.communicationLevel}. ${stressMap[e.stressReaction] || ""}. ${
+  const profilEmotional = `Nivel de comunicare apreciat ca ${e.communicationLevel} de către echipă. ${stressMap[e.stressReaction] || ""}. ${
     emotions.length > 0
-      ? `Se observă: ${emotions.join(", ")}.`
-      : "Fără semne emoționale deosebite observate."
-  } Somn: ${e.sleepQuality}. Apetit: ${e.appetite}.`;
+      ? `Echipa a observat: ${emotions.join("; ")}.`
+      : "Nu au fost semnalate aspecte emoționale deosebite."
+  } Somnul a fost apreciat ca ${e.sleepQuality}, apetitul ca ${e.appetite}.`;
 
   const nevoi: string[] = [];
   if (b.hasFamily === "nu" || b.hasFamily === "partial")
-    nevoi.push("Nevoie de atașament și stabilitate relațională");
+    nevoi.push("Ar putea beneficia de stabilitate și continuitate în relații");
   if (b.housingStatus === "fara_adapost")
-    nevoi.push("Nevoie urgentă de stabilitate locativă");
+    nevoi.push("Ar avea nevoie de un spațiu stabil de locuire");
   if (e.autonomy === "dependent")
-    nevoi.push("Sprijin pentru dezvoltarea autonomiei");
+    nevoi.push("Ar putea fi sprijinit în dezvoltarea autonomiei, pas cu pas");
   if (e.sociability === "retras")
-    nevoi.push("Stimularea integrării sociale");
+    nevoi.push("Ar putea beneficia de activități de grup, la propriul ritm");
   if (e.sadness || e.anxiety || e.apathy)
-    nevoi.push("Susținere emoțională continuă");
-  if (b.knownDiseases) nevoi.push("Monitorizare și sprijin medical");
-  if (nevoi.length === 0) nevoi.push("Menținerea echilibrului actual");
+    nevoi.push("Ar putea avea nevoie de o prezență caldă și constant");
+  if (b.knownDiseases) nevoi.push("Este bine să fie monitorizat și sprijinit pe partea medicală");
+  if (nevoi.length === 0) nevoi.push("Situația pare echilibrată, se recomandă menținerea sprijinului actual");
 
   const riscuri: string[] = [];
-  if (e.sadness && e.apathy) riscuri.push("Risc de retragere și izolare");
+  if (e.sadness && e.apathy) riscuri.push("Ar fi util ca echipa să fie atentă la semne de retragere");
   if (e.anger && e.stressReaction === "crize")
-    riscuri.push("Risc de conflict și auto-vătămare");
+    riscuri.push("Personalul ar putea monitoriza momentele de tensiune pentru a oferi sprijin la timp");
   if (b.hasFamily === "nu")
-    riscuri.push("Risc de abandon și lipsă suport");
+    riscuri.push("Lipsa contactului familial ar putea influența starea de bine — echipa poate compensa prin prezență");
   if (e.sleepQuality === "slab" && e.appetite === "scazut")
-    riscuri.push("Semne de deteriorare a stării generale");
+    riscuri.push("Somnul și apetitul necesită atenție — ar fi bine să fie discutate cu un medic");
   if (e.sociability === "agresiv")
-    riscuri.push("Dificultăți în relațiile interpersonale");
-  if (riscuri.length === 0) riscuri.push("Fără riscuri majore identificate la momentul evaluării");
+    riscuri.push("Personalul ar putea fi atent la interacțiunile cu ceilalți pentru a preveni conflicte");
+  if (riscuri.length === 0) riscuri.push("Nu au fost identificate aspecte care să necesite atenție specială la acest moment");
 
   const recomandari: string[] = [
-    "Ton calm și structurat în comunicare",
-    "Evitarea conflictelor directe",
+    "Comunicare calmă, cu răbdare și ton prietenos",
+    "Evitarea situațiilor care ar putea genera tensiune",
   ];
   if (e.sociability === "retras")
-    recomandari.push("Încurajarea participării la activități de grup");
+    recomandari.push("Invitarea blândă la activități comune, fără presiune");
   if (e.stressReaction === "crize")
-    recomandari.push("Tehnici de de-escaladare, spațiu sigur");
+    recomandari.push("Oferirea unui spațiu liniștit când situația devine dificilă");
   if (e.autonomy === "dependent")
-    recomandari.push("Pași mici spre independență, cu încurajare");
+    recomandari.push("Încurajarea micilor pași spre independență, cu răbdare");
   if (e.sadness)
-    recomandari.push("Atenție la semne de retragere, discuții deschise");
-  recomandari.push("Rutină stabilă și predictibilă");
+    recomandari.push("Atenție la momentele de retragere, o discuție deschisă poate ajuta");
+  recomandari.push("Menținerea unei rutine stabile și predictibile");
 
   const plan: string[] = [];
   if (e.sadness || e.anxiety || e.apathy)
-    plan.push("Consiliere individuală săptămânală");
+    plan.push("Discuții individuale regulate cu un membru al echipei");
   if (b.hasFamily === "partial")
-    plan.push("Program de mediere familială");
+    plan.push("Sprijinirea menținerii legăturii cu familia, acolo unde este posibil");
   if (b.hasFamily === "nu")
-    plan.push("Identificare mentor sau persoană de referință");
+    plan.push("Identificarea unei persoane de referință din echipă sau voluntari");
   if (b.knownDiseases)
-    plan.push("Consultație medicală periodică");
-  plan.push("Evaluare de progres la 30 de zile");
-  plan.push("Actualizarea planului individual de intervenție");
+    plan.push("Programarea unui control medical periodic");
+  plan.push("Revizuirea acestei note peste 30 de zile");
+  plan.push("Ajustarea sprijinului în funcție de evoluție");
 
   return {
     contextPersonal,

@@ -169,7 +169,7 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
     doc.setFont("DejaVu", "bold");
     doc.setFontSize(16);
     doc.setTextColor(255, 255, 255);
-    doc.text("FISA PSIHOSOCIALA", pw / 2, 14, { align: "center" });
+    doc.text("NOTA ORIENTATIVA INTERNA", pw / 2, 14, { align: "center" });
     doc.setFontSize(10);
     doc.setFont("DejaVu", "normal");
     doc.text(`${data.beneficiary.lastName} ${data.beneficiary.firstName}  |  Cod: ${data.beneficiary.code}`, pw / 2, 22, { align: "center" });
@@ -211,37 +211,49 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
     }
     y += 4;
 
-    // === PROFIL AI ===
+    // === NOTA ORIENTATIVA AI ===
     if (report) {
-      sectionHeading("Profil psihosocial orientativ (generat AI)");
+      sectionHeading("Nota orientativa (generata automat)");
+
+      // Disclaimer in PDF
+      checkPage(16);
+      doc.setFont("DejaVu", "normal"); doc.setFontSize(7.5); doc.setTextColor(160, 100, 0);
+      const disclaimerLines = doc.splitTextToSize(
+        "Aceasta nota este generata automat pe baza observatiilor personalului si are caracter strict orientativ. " +
+        "NU constituie diagnostic medical, psihologic sau psihiatric si NU inlocuieste evaluarea unui specialist. " +
+        "Este destinata exclusiv uzului intern al echipei de sprijin.",
+        maxW
+      );
+      doc.text(disclaimerLines, margin, y);
+      y += disclaimerLines.length * 3.5 + 4;
 
       doc.setFont("DejaVu", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
-      doc.text("1. Context personal", margin, y); y += 5;
+      doc.text("1. Situatia persoanei", margin, y); y += 5;
       paragraph(report.contextPersonal); y += 2;
 
       checkPage(10);
       doc.setFont("DejaVu", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
-      doc.text("2. Profil emotional", margin, y); y += 5;
+      doc.text("2. Observatii ale personalului", margin, y); y += 5;
       paragraph(report.profilEmotional); y += 2;
 
       checkPage(10);
       doc.setFont("DejaVu", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
-      doc.text("3. Nevoi principale", margin, y); y += 5;
+      doc.text("3. De ce ar putea avea nevoie", margin, y); y += 5;
       bulletList(report.nevoiPrincipale, [30, 30, 100]); y += 2;
 
       checkPage(10);
       doc.setFont("DejaVu", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
-      doc.text("4. Riscuri identificate", margin, y); y += 5;
-      bulletList(report.riscuri, [180, 30, 30]); y += 2;
+      doc.text("4. Aspecte de monitorizat", margin, y); y += 5;
+      bulletList(report.riscuri, [160, 100, 0]); y += 2;
 
       checkPage(10);
       doc.setFont("DejaVu", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
-      doc.text("5. Recomandari pentru personal", margin, y); y += 5;
+      doc.text("5. Sugestii pentru echipa", margin, y); y += 5;
       bulletList(report.recomandariPersonal, [20, 120, 50]); y += 2;
 
       checkPage(10);
       doc.setFont("DejaVu", "bold"); doc.setFontSize(9.5); doc.setTextColor(30, 30, 80);
-      doc.text("6. Plan de sprijin", margin, y); y += 5;
+      doc.text("6. Pasi de sprijin propusi", margin, y); y += 5;
       bulletList(report.planSprijin, [40, 40, 40]);
     }
 
@@ -254,9 +266,9 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
     doc.setFont("DejaVu", "normal");
     doc.setFontSize(7);
     doc.setTextColor(140, 140, 140);
-    doc.text("Acest profil este orientativ si nu constituie un diagnostic medical sau psihologic.", margin, y);
+    doc.text("Nota strict orientativa, pentru uzul intern al echipei. Nu constituie si nu inlocuieste un diagnostic.", margin, y);
     y += 3.5;
-    doc.text("Scopul este de a oferi sprijin personalului in intelegerea nevoilor beneficiarului.", margin, y);
+    doc.text("Pentru evaluare profesionala, consultati un specialist autorizat (psiholog, medic).", margin, y);
     y += 3.5;
     doc.text(`Document generat la ${new Date().toLocaleString("ro-RO")} | Casa Nicolae`, margin, y);
 
@@ -336,24 +348,32 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
                 </svg>
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Profil psihosocial orientativ</h2>
-                <p className="text-xs text-gray-400">Generat la {new Date(report.generatedAt).toLocaleString("ro-RO")} | NU este diagnostic</p>
+                <h2 className="text-lg font-semibold text-gray-900">Nota orientativa interna</h2>
+                <p className="text-xs text-gray-400">Generata la {new Date(report.generatedAt).toLocaleString("ro-RO")} | Document intern, NU este diagnostic</p>
               </div>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
+              <p className="text-xs text-amber-700">
+                Aceasta nota este generata automat pe baza observatiilor personalului si are caracter strict orientativ.
+                NU constituie diagnostic medical, psihologic sau psihiatric si NU inlocuieste evaluarea unui specialist.
+                Este destinata exclusiv uzului intern al echipei de sprijin.
+              </p>
             </div>
 
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">1. Context personal</h3>
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">1. Situatia persoanei</h3>
                 <p className="text-sm text-gray-600 leading-relaxed">{report.contextPersonal}</p>
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">2. Profil emotional</h3>
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">2. Observatii ale personalului</h3>
                 <p className="text-sm text-gray-600 leading-relaxed">{report.profilEmotional}</p>
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">3. Nevoi principale</h3>
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">3. De ce ar putea avea nevoie</h3>
                 <ul className="space-y-1">
                   {report.nevoiPrincipale.map((n, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
@@ -364,29 +384,29 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">4. Riscuri identificate</h3>
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">4. Aspecte de monitorizat</h3>
                 <ul className="space-y-1">
                   {report.riscuri.map((r, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-red-600">
-                      <span className="mt-1">&#x26A0;</span>{r}
+                    <li key={i} className="flex items-start gap-2 text-sm text-amber-700">
+                      <span className="mt-1">&#x2022;</span>{r}
                     </li>
                   ))}
                 </ul>
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">5. Recomandari pentru personal</h3>
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">5. Sugestii pentru echipa</h3>
                 <ul className="space-y-1">
                   {report.recomandariPersonal.map((r, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-green-700">
-                      <span className="mt-1">&#x2713;</span>{r}
+                      <span className="mt-1">&#x2022;</span>{r}
                     </li>
                   ))}
                 </ul>
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">6. Plan de sprijin</h3>
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">6. Pasi de sprijin propusi</h3>
                 <ul className="space-y-1">
                   {report.planSprijin.map((p, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
@@ -398,9 +418,9 @@ export default function EvaluareDetailPage({ params }: { params: Promise<{ id: s
             </div>
 
             <div className="mt-6 pt-4 border-t border-gray-100">
-              <p className="text-xs text-gray-400 italic">
-                Acest profil este orientativ si nu constituie un diagnostic medical sau psihologic.
-                Scopul este de a oferi sprijin personalului in intelegerea nevoilor beneficiarului.
+              <p className="text-xs text-gray-400">
+                Aceasta nota este strict orientativa, pentru uzul intern al echipei. Nu constituie si nu inlocuieste
+                un diagnostic medical sau psihologic. Pentru evaluare profesionala, consultati un specialist autorizat.
               </p>
             </div>
           </div>

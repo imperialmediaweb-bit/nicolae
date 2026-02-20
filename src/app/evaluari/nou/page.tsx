@@ -247,8 +247,8 @@ function EvaluareNouaContent() {
 
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-sm text-blue-700">
-                  Dupa salvare, sistemul AI va genera automat un profil psihosocial orientativ cu recomandari de sprijin.
-                  Acesta NU pune diagnostice, ci ofera un profil orientativ.
+                  Dupa salvare, sistemul va genera automat o nota orientativa interna cu sugestii de sprijin
+                  pentru echipa. Aceasta NU este un diagnostic si NU inlocuieste evaluarea unui specialist.
                 </p>
               </div>
             </div>
@@ -276,7 +276,7 @@ function EvaluareNouaContent() {
             ) : (
               <button onClick={handleSubmit} disabled={saving}
                 className="flex-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white py-3 rounded-2xl font-semibold text-sm disabled:opacity-50 active:scale-[0.98] transition-all">
-                {saving ? "Se genereaza..." : "Genereaza raport AI"}
+                {saving ? "Se genereaza..." : "Genereaza nota orientativa"}
               </button>
             )}
           </div>
