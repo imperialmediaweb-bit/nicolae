@@ -32,6 +32,7 @@ function EvaluareNouaContent() {
   const preselectedId = searchParams.get("beneficiaryId") || "";
 
   const [beneficiari, setBeneficiari] = useState<Beneficiary[]>([]);
+  const [search, setSearch] = useState("");
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -137,59 +138,114 @@ function EvaluareNouaContent() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm p-5">
-          {step === 1 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Selecteaza beneficiarul</h2>
-              {beneficiari.length === 0 ? (
-                <div className="text-center py-6">
-                  <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                  <p className="text-gray-900 font-semibold mb-1">Niciun beneficiar in sistem</p>
-                  <p className="text-sm text-gray-500 mb-5">Trebuie sa adaugi cel putin un beneficiar<br />inainte de a crea o nota orientativa.</p>
+          {step === 1 && (() => {
+            const selectedBen = beneficiari.find(b => b.id === form.beneficiaryId);
+            const q = search.toLowerCase().trim();
+            const filtered = q
+              ? beneficiari.filter(b =>
+                  `${b.firstName} ${b.lastName} ${b.code}`.toLowerCase().includes(q)
+                )
+              : beneficiari;
+
+            return (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-gray-900">Selecteaza beneficiarul</h2>
                   <a href="/beneficiari/nou"
-                    className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white px-5 py-3 rounded-2xl font-semibold text-sm active:scale-[0.97] transition-all shadow-sm">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    className="flex items-center gap-1.5 bg-indigo-600 text-white px-3 py-2 rounded-xl text-xs font-semibold active:scale-95 transition-all shadow-sm">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
                     </svg>
-                    Adauga beneficiar
+                    Nou
                   </a>
                 </div>
-              ) : (
-                <>
-                  <select value={form.beneficiaryId} onChange={(e) => update("beneficiaryId", e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-gray-900">
-                    <option value="">-- Alege beneficiar --</option>
-                    {beneficiari.map((b) => (
-                      <option key={b.id} value={b.id}>{b.firstName} {b.lastName} ({b.code})</option>
-                    ))}
-                  </select>
-                  {form.beneficiaryId && !beneficiari.find(b => b.id === form.beneficiaryId)?.hasConsent && (
-                    <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl">
-                      <p className="text-sm text-red-700 font-medium">Acest beneficiar nu are consimtamant GDPR!</p>
-                      <p className="text-xs text-red-600 mt-1">Nu poti crea nota orientativa fara acord GDPR. Editeaza fisa beneficiarului pentru a adauga acordul.</p>
-                    </div>
-                  )}
 
-                  {form.beneficiaryId && beneficiari.find(b => b.id === form.beneficiaryId)?.hasConsent && (
-                    <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-                      <div className="flex items-start gap-3">
-                        <input type="checkbox" id="evalConsent" checked={form.evalConsent}
-                          onChange={(e) => update("evalConsent", e.target.checked)}
-                          className="h-5 w-5 text-emerald-600 rounded mt-0.5 flex-shrink-0" />
-                        <label htmlFor="evalConsent" className="text-sm text-amber-900 leading-relaxed cursor-pointer">
-                          Beneficiarul a fost informat si este de acord. Nota generata este
-                          orientativa, nu e diagnostic si nu inlocuieste un specialist.
-                        </label>
-                      </div>
+                {/* Search */}
+                <div className="relative">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Cauta dupa nume sau cod..."
+                    className="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  />
+                </div>
+
+                {/* Selected indicator */}
+                {selectedBen && (
+                  <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
+                    <svg className="w-5 h-5 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-sm text-emerald-800 font-medium">{selectedBen.firstName} {selectedBen.lastName}</span>
+                    <button onClick={() => update("beneficiaryId", "")} className="ml-auto text-emerald-500 text-xs">Schimba</button>
+                  </div>
+                )}
+
+                {/* Beneficiary list */}
+                {beneficiari.length === 0 ? (
+                  <div className="text-center py-6">
+                    <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
                     </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
+                    <p className="text-gray-900 font-semibold mb-1">Niciun beneficiar in sistem</p>
+                    <p className="text-sm text-gray-500">Adauga un beneficiar folosind butonul de sus.</p>
+                  </div>
+                ) : !selectedBen && (
+                  <div className="max-h-60 overflow-y-auto space-y-2 -mx-1 px-1">
+                    {filtered.length === 0 ? (
+                      <div className="text-center py-4">
+                        <p className="text-sm text-gray-500">Niciun rezultat pentru &quot;{search}&quot;</p>
+                      </div>
+                    ) : (
+                      filtered.map((b) => (
+                        <button key={b.id} onClick={() => { update("beneficiaryId", b.id); setSearch(""); }}
+                          className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-white hover:bg-gray-50 active:scale-[0.98] transition-all text-left">
+                          <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm flex-shrink-0">
+                            {b.firstName.charAt(0)}{b.lastName.charAt(0)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 truncate">{b.firstName} {b.lastName}</p>
+                            <p className="text-[11px] text-gray-400">{b.code}</p>
+                          </div>
+                          {!b.hasConsent && (
+                            <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium flex-shrink-0">Fara GDPR</span>
+                          )}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+
+                {/* GDPR warnings */}
+                {form.beneficiaryId && !selectedBen?.hasConsent && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
+                    <p className="text-sm text-red-700 font-medium">Acest beneficiar nu are consimtamant GDPR!</p>
+                    <p className="text-xs text-red-600 mt-1">Nu poti crea nota orientativa fara acord GDPR. Editeaza fisa beneficiarului pentru a adauga acordul.</p>
+                  </div>
+                )}
+
+                {form.beneficiaryId && selectedBen?.hasConsent && (
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                    <div className="flex items-start gap-3">
+                      <input type="checkbox" id="evalConsent" checked={form.evalConsent}
+                        onChange={(e) => update("evalConsent", e.target.checked)}
+                        className="h-5 w-5 text-emerald-600 rounded mt-0.5 flex-shrink-0" />
+                      <label htmlFor="evalConsent" className="text-sm text-amber-900 leading-relaxed cursor-pointer">
+                        Beneficiarul a fost informat si este de acord. Nota generata este
+                        orientativa, nu e diagnostic si nu inlocuieste un specialist.
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {step === 2 && (
             <div className="space-y-6">
