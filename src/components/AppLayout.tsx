@@ -62,6 +62,7 @@ export default function AppLayout({ children, title, backHref }: { children: Rea
   const [criticalCount, setCriticalCount] = useState(0);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifDismissed, setNotifDismissed] = useState<Set<string>>(new Set());
+  const [profileOpen, setProfileOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -122,6 +123,11 @@ export default function AppLayout({ children, title, backHref }: { children: Rea
     setNotifDismissed((prev) => new Set([...prev, id]));
   }
 
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/login";
+  }
+
   const activeNotifs = notifications.filter((n) => !notifDismissed.has(n.id));
   const activeBadge = activeNotifs.length;
 
@@ -151,6 +157,12 @@ export default function AppLayout({ children, title, backHref }: { children: Rea
                 </Link>
               )}
               <h1 className="text-lg font-bold text-gray-900 truncate flex-1">{title}</h1>
+              {/* Profile button in header */}
+              <button onClick={() => setProfileOpen(!profileOpen)} className="p-2">
+                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </button>
               {/* Notification bell in header */}
               <button onClick={() => setNotifOpen(!notifOpen)} className="relative p-2 -mr-2">
                 <svg className={`w-6 h-6 ${activeBadge > 0 ? "text-indigo-600" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -168,21 +180,52 @@ export default function AppLayout({ children, title, backHref }: { children: Rea
           </div>
         )}
 
-        {/* Notification bell for dashboard (no title header) */}
-        {!title && activeBadge > 0 && (
-          <div className="fixed top-3 right-3 z-50">
-            <button onClick={() => setNotifOpen(!notifOpen)}
-              className="relative bg-white rounded-full p-2.5 shadow-lg border border-gray-100 active:scale-95 transition-all">
-              <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        {/* Dashboard top buttons (no title header) */}
+        {!title && (
+          <div className="fixed top-3 right-3 z-50 flex items-center gap-2">
+            {/* Profile button */}
+            <button onClick={() => setProfileOpen(!profileOpen)}
+              className="bg-white rounded-full p-2.5 shadow-lg border border-gray-100 active:scale-95 transition-all">
+              <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              <span className={`absolute -top-1 -right-1 min-w-[22px] h-[22px] flex items-center justify-center rounded-full text-white text-[11px] font-bold px-1 ${
-                activeNotifs.some((n) => n.severity === "critical") ? "bg-red-500 animate-pulse" : "bg-orange-500"
-              }`}>
-                {activeBadge}
-              </span>
             </button>
+            {/* Notification bell */}
+            {activeBadge > 0 && (
+              <button onClick={() => setNotifOpen(!notifOpen)}
+                className="relative bg-white rounded-full p-2.5 shadow-lg border border-gray-100 active:scale-95 transition-all">
+                <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span className={`absolute -top-1 -right-1 min-w-[22px] h-[22px] flex items-center justify-center rounded-full text-white text-[11px] font-bold px-1 ${
+                  activeNotifs.some((n) => n.severity === "critical") ? "bg-red-500 animate-pulse" : "bg-orange-500"
+                }`}>
+                  {activeBadge}
+                </span>
+              </button>
+            )}
           </div>
+        )}
+
+        {/* Profile/Logout dropdown */}
+        {profileOpen && (
+          <>
+            <div className="fixed inset-0 z-50" onClick={() => setProfileOpen(false)} />
+            <div className="fixed top-14 right-3 z-50 bg-white rounded-2xl shadow-2xl border border-gray-100 w-64 overflow-hidden">
+              <div className="p-4 border-b border-gray-100">
+                <p className="font-bold text-gray-900 text-sm">{user?.name}</p>
+                <p className="text-xs text-gray-400">@{user?.username}</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="w-full px-4 py-3.5 text-left text-sm text-red-600 font-medium flex items-center gap-3 active:bg-red-50 transition">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Deconectare
+              </button>
+            </div>
+          </>
         )}
 
         {/* Notifications panel (overlay) */}

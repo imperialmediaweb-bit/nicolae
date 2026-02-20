@@ -9,8 +9,8 @@ interface ConfigItem {
 }
 
 const KEY_INFO: Record<string, { label: string; description: string; placeholder: string; group: string }> = {
-  ANTHROPIC_API_KEY: { label: "Anthropic (Claude)", description: "Recomandat - cel mai bun pentru profile si chat", placeholder: "sk-ant-api03-...", group: "ai" },
-  OPENAI_API_KEY: { label: "OpenAI (GPT)", description: "Alternativa - se foloseste daca Anthropic nu e setat", placeholder: "sk-...", group: "ai" },
+  ANTHROPIC_API_KEY: { label: "Anthropic (Claude)", description: "Cheia API pentru Claude", placeholder: "sk-ant-api03-...", group: "ai" },
+  GEMINI_API_KEY: { label: "Google Gemini", description: "Cheia API pentru Gemini", placeholder: "AIzaSy...", group: "ai" },
   TWILIO_ACCOUNT_SID: { label: "Twilio Account SID", description: "Pentru trimitere SMS la alerte critice", placeholder: "ACxxxxxxxxx", group: "sms" },
   TWILIO_AUTH_TOKEN: { label: "Twilio Auth Token", description: "Token-ul de autentificare Twilio", placeholder: "your_auth_token", group: "sms" },
   TWILIO_PHONE_NUMBER: { label: "Numar Twilio (de pe care se trimite)", description: "Numarul tau Twilio in format international", placeholder: "+40xxxxxxxxxx", group: "sms" },
@@ -93,7 +93,7 @@ export default function SetariPage() {
               </div>
               <div>
                 <h2 className="font-bold text-gray-900">Chei API Inteligenta Artificiala</h2>
-                <p className="text-xs text-gray-400">Necesare pentru chat AI, profile si analiza farmacie</p>
+                <p className="text-xs text-gray-400">Adauga una sau mai multe chei — se folosesc automat cu fallback</p>
               </div>
             </div>
 
@@ -225,7 +225,7 @@ export default function SetariPage() {
             <p className="text-sm text-blue-700 font-medium mb-1">Cum obtii cheia API?</p>
             <ul className="text-xs text-blue-600 space-y-1">
               <li>Anthropic: console.anthropic.com &rarr; API Keys</li>
-              <li>OpenAI: platform.openai.com &rarr; API Keys</li>
+              <li>Google Gemini: aistudio.google.com &rarr; API Keys</li>
               <li>Twilio: twilio.com &rarr; Console &rarr; Account SID &amp; Auth Token</li>
             </ul>
           </div>

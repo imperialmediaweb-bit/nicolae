@@ -61,7 +61,7 @@ REGULI:
     }
     if (error instanceof Error && (error.message === "NO_API_KEY" || error.message.includes("API"))) {
       return NextResponse.json({
-        response: "Nu este configurată nicio cheie API. Mergi la Setări (din meniul de admin) și adaugă cheia Anthropic sau OpenAI.",
+        response: "Nu este configurată nicio cheie API. Mergi la Setări (din meniul de admin) și adaugă cheia Anthropic sau Gemini.",
         noApiKey: true,
       });
     }

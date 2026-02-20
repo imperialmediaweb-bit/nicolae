@@ -43,32 +43,43 @@ export interface AIReport {
 // ---------- SHARED: get API key from DB or env ----------
 import { getConfig } from "./config";
 
-async function getApiKey(): Promise<{ provider: string; key: string } | null> {
-  // Try Anthropic first (preferred)
+async function getAllApiKeys(): Promise<Array<{ provider: string; key: string }>> {
+  const keys: Array<{ provider: string; key: string }> = [];
+
   const anthropicKey = await getConfig("ANTHROPIC_API_KEY");
   if (anthropicKey && anthropicKey !== "your-anthropic-api-key-here") {
-    return { provider: "anthropic", key: anthropicKey };
+    keys.push({ provider: "anthropic", key: anthropicKey });
   }
 
-  // Try OpenAI
-  const openaiKey = await getConfig("OPENAI_API_KEY");
-  if (openaiKey && openaiKey !== "your-openai-api-key-here") {
-    return { provider: "openai", key: openaiKey };
+  const geminiKey = await getConfig("GEMINI_API_KEY");
+  if (geminiKey && geminiKey !== "your-gemini-api-key-here") {
+    keys.push({ provider: "gemini", key: geminiKey });
   }
 
-  return null;
+  return keys;
 }
 
-// ---------- SHARED: call AI API (supports Anthropic + OpenAI) ----------
+// ---------- SHARED: call AI with automatic fallback ----------
 export async function callAI(systemPrompt: string, userPrompt: string): Promise<string> {
-  const credentials = await getApiKey();
-  if (!credentials) throw new Error("NO_API_KEY");
+  const providers = await getAllApiKeys();
+  if (providers.length === 0) throw new Error("NO_API_KEY");
 
-  if (credentials.provider === "anthropic") {
-    return callClaude(credentials.key, systemPrompt, userPrompt);
-  } else {
-    return callOpenAI(credentials.key, systemPrompt, userPrompt);
+  let lastError: Error | null = null;
+
+  for (const { provider, key } of providers) {
+    try {
+      if (provider === "anthropic") {
+        return await callClaude(key, systemPrompt, userPrompt);
+      } else {
+        return await callGemini(key, systemPrompt, userPrompt);
+      }
+    } catch (err) {
+      console.warn(`Provider ${provider} failed, trying next...`, err);
+      lastError = err instanceof Error ? err : new Error(String(err));
+    }
   }
+
+  throw lastError ?? new Error("ALL_PROVIDERS_FAILED");
 }
 
 async function callClaude(apiKey: string, systemPrompt: string, userPrompt: string): Promise<string> {
@@ -97,31 +108,28 @@ async function callClaude(apiKey: string, systemPrompt: string, userPrompt: stri
   return result.content[0].text;
 }
 
-async function callOpenAI(apiKey: string, systemPrompt: string, userPrompt: string): Promise<string> {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: 0.3,
-    }),
-  });
+async function callGemini(apiKey: string, systemPrompt: string, userPrompt: string): Promise<string> {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ parts: [{ text: userPrompt }] }],
+        generationConfig: { temperature: 0.3 },
+      }),
+    }
+  );
 
   if (!response.ok) {
     const err = await response.text();
-    console.error("OpenAI API error:", err);
-    throw new Error("OPENAI_API_ERROR");
+    console.error("Gemini API error:", err);
+    throw new Error("GEMINI_API_ERROR");
   }
 
   const result = await response.json();
-  return result.choices[0].message.content;
+  return result.candidates[0].content.parts[0].text;
 }
 
 // ---------- PROFIL PSIHOSOCIAL ----------

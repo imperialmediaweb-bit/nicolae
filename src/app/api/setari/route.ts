@@ -4,7 +4,7 @@ import { getConfig, setConfig, deleteConfig } from "@/lib/config";
 
 const ALLOWED_KEYS = [
   "ANTHROPIC_API_KEY",
-  "OPENAI_API_KEY",
+  "GEMINI_API_KEY",
   "TWILIO_ACCOUNT_SID",
   "TWILIO_AUTH_TOKEN",
   "TWILIO_PHONE_NUMBER",
