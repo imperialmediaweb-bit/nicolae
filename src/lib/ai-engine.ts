@@ -46,13 +46,18 @@ import { getConfig } from "./config";
 async function getAllApiKeys(): Promise<Array<{ provider: string; key: string }>> {
   const keys: Array<{ provider: string; key: string }> = [];
 
+  const openaiKey = await getConfig("OPENAI_API_KEY");
+  if (openaiKey && !openaiKey.includes("your-")) {
+    keys.push({ provider: "openai", key: openaiKey });
+  }
+
   const anthropicKey = await getConfig("ANTHROPIC_API_KEY");
-  if (anthropicKey && anthropicKey !== "your-anthropic-api-key-here") {
+  if (anthropicKey && !anthropicKey.includes("your-")) {
     keys.push({ provider: "anthropic", key: anthropicKey });
   }
 
   const geminiKey = await getConfig("GEMINI_API_KEY");
-  if (geminiKey && geminiKey !== "your-gemini-api-key-here") {
+  if (geminiKey && !geminiKey.includes("your-")) {
     keys.push({ provider: "gemini", key: geminiKey });
   }
 
@@ -68,7 +73,9 @@ export async function callAI(systemPrompt: string, userPrompt: string): Promise<
 
   for (const { provider, key } of providers) {
     try {
-      if (provider === "anthropic") {
+      if (provider === "openai") {
+        return await callOpenAI(key, systemPrompt, userPrompt);
+      } else if (provider === "anthropic") {
         return await callClaude(key, systemPrompt, userPrompt);
       } else {
         return await callGemini(key, systemPrompt, userPrompt);
@@ -80,6 +87,34 @@ export async function callAI(systemPrompt: string, userPrompt: string): Promise<
   }
 
   throw lastError ?? new Error("ALL_PROVIDERS_FAILED");
+}
+
+async function callOpenAI(apiKey: string, systemPrompt: string, userPrompt: string): Promise<string> {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_tokens: 2048,
+      temperature: 0.3,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    console.error("OpenAI API error:", err);
+    throw new Error("OPENAI_API_ERROR");
+  }
+
+  const result = await response.json();
+  return result.choices[0].message.content;
 }
 
 async function callClaude(apiKey: string, systemPrompt: string, userPrompt: string): Promise<string> {
