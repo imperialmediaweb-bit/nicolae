@@ -9,6 +9,7 @@ interface ConfigItem {
 }
 
 const KEY_INFO: Record<string, { label: string; description: string; placeholder: string; group: string }> = {
+  OPENAI_API_KEY: { label: "OpenAI (GPT)", description: "Cheia API pentru GPT-4o", placeholder: "sk-proj-...", group: "ai" },
   ANTHROPIC_API_KEY: { label: "Anthropic (Claude)", description: "Cheia API pentru Claude", placeholder: "sk-ant-api03-...", group: "ai" },
   GEMINI_API_KEY: { label: "Google Gemini", description: "Cheia API pentru Gemini", placeholder: "AIzaSy...", group: "ai" },
   TWILIO_ACCOUNT_SID: { label: "Twilio Account SID", description: "Pentru trimitere SMS la alerte critice", placeholder: "ACxxxxxxxxx", group: "sms" },
@@ -224,6 +225,7 @@ export default function SetariPage() {
           <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
             <p className="text-sm text-blue-700 font-medium mb-1">Cum obtii cheia API?</p>
             <ul className="text-xs text-blue-600 space-y-1">
+              <li>OpenAI: platform.openai.com &rarr; API Keys</li>
               <li>Anthropic: console.anthropic.com &rarr; API Keys</li>
               <li>Google Gemini: aistudio.google.com &rarr; API Keys</li>
               <li>Twilio: twilio.com &rarr; Console &rarr; Account SID &amp; Auth Token</li>

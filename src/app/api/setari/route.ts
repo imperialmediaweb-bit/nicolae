@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/auth";
 import { getConfig, setConfig, deleteConfig } from "@/lib/config";
 
 const ALLOWED_KEYS = [
+  "OPENAI_API_KEY",
   "ANTHROPIC_API_KEY",
   "GEMINI_API_KEY",
   "TWILIO_ACCOUNT_SID",
