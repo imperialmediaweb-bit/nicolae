@@ -67,6 +67,7 @@ async function getAllApiKeys(): Promise<Array<{ provider: string; key: string }>
 // ---------- SHARED: call AI with automatic fallback ----------
 export async function callAI(systemPrompt: string, userPrompt: string): Promise<string> {
   const providers = await getAllApiKeys();
+  console.log(`[AI] Found ${providers.length} provider(s): ${providers.map(p => p.provider).join(", ") || "none"}`);
   if (providers.length === 0) throw new Error("NO_API_KEY");
 
   let lastError: Error | null = null;
