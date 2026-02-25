@@ -109,8 +109,8 @@ async function callOpenAI(apiKey: string, systemPrompt: string, userPrompt: stri
 
   if (!response.ok) {
     const err = await response.text();
-    console.error("OpenAI API error:", err);
-    throw new Error("OPENAI_API_ERROR");
+    console.error("OpenAI API error:", response.status, err);
+    throw new Error(`OPENAI_API_ERROR: ${response.status} - ${err}`);
   }
 
   const result = await response.json();
@@ -135,8 +135,8 @@ async function callClaude(apiKey: string, systemPrompt: string, userPrompt: stri
 
   if (!response.ok) {
     const err = await response.text();
-    console.error("Claude API error:", err);
-    throw new Error("CLAUDE_API_ERROR");
+    console.error("Claude API error:", response.status, err);
+    throw new Error(`CLAUDE_API_ERROR: ${response.status} - ${err}`);
   }
 
   const result = await response.json();
@@ -159,8 +159,8 @@ async function callGemini(apiKey: string, systemPrompt: string, userPrompt: stri
 
   if (!response.ok) {
     const err = await response.text();
-    console.error("Gemini API error:", err);
-    throw new Error("GEMINI_API_ERROR");
+    console.error("Gemini API error:", response.status, err);
+    throw new Error(`GEMINI_API_ERROR: ${response.status} - ${err}`);
   }
 
   const result = await response.json();
