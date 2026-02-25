@@ -59,10 +59,24 @@ REGULI:
     if (error instanceof Error && error.message === "Neautorizat") {
       return NextResponse.json({ error: "Neautorizat" }, { status: 401 });
     }
-    if (error instanceof Error && (error.message === "NO_API_KEY" || error.message.includes("API"))) {
+    if (error instanceof Error && error.message === "NO_API_KEY") {
       return NextResponse.json({
         response: "Nu este configurată nicio cheie API. Mergi la Setări (din meniul de admin) și adaugă cheia Anthropic sau Gemini.",
         noApiKey: true,
+      });
+    }
+    if (error instanceof Error && (error.message.includes("API_ERROR") || error.message === "ALL_PROVIDERS_FAILED")) {
+      // Extract status code if available
+      const statusMatch = error.message.match(/: (\d+) -/);
+      const status = statusMatch ? parseInt(statusMatch[1]) : 0;
+      let detail = "";
+      if (status === 401) detail = " Cheia API este invalidă sau a fost revocată.";
+      else if (status === 429) detail = " Limita de cereri a fost depășită sau nu ai credit suficient.";
+      else if (status === 403) detail = " Acces interzis - verifică permisiunile cheii API.";
+      else if (status >= 500) detail = " Serverul provider-ului are probleme temporare. Încearcă din nou.";
+
+      return NextResponse.json({
+        response: `Cheia API este configurată, dar apelul a eșuat (cod ${status || "necunoscut"}).${detail} Verifică setările sau încearcă din nou.`,
       });
     }
     console.error("Chat error:", error);
