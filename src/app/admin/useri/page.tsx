@@ -150,13 +150,39 @@ export default function AdminUseriPage() {
           </div>
           <div className="flex-1">
             <h3 className="font-bold text-white text-sm">Setari & Chei API</h3>
-            <p className="text-violet-100 text-xs">Configureaza AI (Claude, Gemini), SMS Twilio</p>
+            <p className="text-violet-100 text-xs">Configureaza AI, Email, SMS</p>
           </div>
           <svg className="w-5 h-5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </div>
       </Link>
+
+      {/* Admin quick links */}
+      <div className="grid grid-cols-2 gap-3 mb-5">
+        <Link href="/admin/parinti">
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 active:scale-[0.98] transition shadow-sm">
+            <div className="bg-blue-100 w-10 h-10 rounded-xl flex items-center justify-center mb-2">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <h3 className="font-bold text-gray-900 text-sm">Parinti</h3>
+            <p className="text-[10px] text-gray-400">Conturi & abonamente</p>
+          </div>
+        </Link>
+        <Link href="/admin/email">
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 active:scale-[0.98] transition shadow-sm">
+            <div className="bg-emerald-100 w-10 h-10 rounded-xl flex items-center justify-center mb-2">
+              <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3 className="font-bold text-gray-900 text-sm">Email</h3>
+            <p className="text-[10px] text-gray-400">Marketing & notificari</p>
+          </div>
+        </Link>
+      </div>
 
       {/* Utilizatori section */}
       <div className="flex items-center justify-between mb-3">

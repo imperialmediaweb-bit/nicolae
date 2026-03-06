@@ -79,6 +79,42 @@ async function main() {
     });
   }
 
+  // Create subscription plans
+  const plans = [
+    {
+      name: "basic",
+      displayName: "Basic",
+      price: 49,
+      color: "#6B7280",
+      sortOrder: 1,
+      features: JSON.stringify(["progres", "tips_parinti", "tips_copii"]),
+    },
+    {
+      name: "premium",
+      displayName: "Premium",
+      price: 99,
+      color: "#3B82F6",
+      sortOrder: 2,
+      features: JSON.stringify(["progres", "tips_parinti", "tips_copii", "retete", "activitati"]),
+    },
+    {
+      name: "vip",
+      displayName: "VIP",
+      price: 149,
+      color: "#8B5CF6",
+      sortOrder: 3,
+      features: JSON.stringify(["progres", "tips_parinti", "tips_copii", "retete", "activitati", "evaluari"]),
+    },
+  ];
+
+  for (const plan of plans) {
+    await prisma.subscriptionPlan.upsert({
+      where: { name: plan.name },
+      update: { displayName: plan.displayName, price: plan.price, color: plan.color, features: plan.features, sortOrder: plan.sortOrder },
+      create: plan,
+    });
+  }
+
   console.log("Seed completat cu succes!");
   console.log("Conturi create:");
   console.log("  admin / admin123 (Administrator)");

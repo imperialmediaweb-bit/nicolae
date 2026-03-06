@@ -12,6 +12,9 @@ const KEY_INFO: Record<string, { label: string; description: string; placeholder
   OPENAI_API_KEY: { label: "OpenAI (GPT)", description: "Cheia API pentru GPT-4o", placeholder: "sk-proj-...", group: "ai" },
   ANTHROPIC_API_KEY: { label: "Anthropic (Claude)", description: "Cheia API pentru Claude", placeholder: "sk-ant-api03-...", group: "ai" },
   GEMINI_API_KEY: { label: "Google Gemini", description: "Cheia API pentru Gemini", placeholder: "AIzaSy...", group: "ai" },
+  RESEND_API_KEY: { label: "Resend API Key", description: "Pentru trimitere email-uri (notificari, promotional)", placeholder: "re_xxxxxxxxx", group: "email" },
+  RESEND_FROM_EMAIL: { label: "Email expeditor", description: "Adresa de pe care se trimit emailurile", placeholder: "noreply@casanicolae.ro", group: "email" },
+  RESEND_FROM_NAME: { label: "Nume expeditor", description: "Numele afisat in inbox", placeholder: "Casa Nicolae", group: "email" },
   TWILIO_ACCOUNT_SID: { label: "Twilio Account SID", description: "Pentru trimitere SMS la alerte critice", placeholder: "ACxxxxxxxxx", group: "sms" },
   TWILIO_AUTH_TOKEN: { label: "Twilio Auth Token", description: "Token-ul de autentificare Twilio", placeholder: "your_auth_token", group: "sms" },
   TWILIO_PHONE_NUMBER: { label: "Numar Twilio (de pe care se trimite)", description: "Numarul tau Twilio in format international", placeholder: "+40xxxxxxxxxx", group: "sms" },
@@ -152,6 +155,75 @@ export default function SetariPage() {
             </div>
           </div>
 
+          {/* Email Section */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="bg-gradient-to-br from-blue-500 to-cyan-600 p-2 rounded-xl">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="font-bold text-gray-900">Email (Resend)</h2>
+                <p className="text-xs text-gray-400">Trimite email-uri catre parinti (notificari, promotional)</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {Object.entries(KEY_INFO).filter(([, v]) => v.group === "email").map(([key, info]) => {
+                const config = configs[key];
+                const isEditing = editKey === key;
+                const isSensitive = key.includes("API_KEY");
+
+                return (
+                  <div key={key} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-semibold text-gray-900 text-sm">{info.label}</h3>
+                      {config?.configured ? (
+                        <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Setat</span>
+                      ) : (
+                        <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium">Nesetat</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 mb-3">{info.description}</p>
+
+                    {config?.configured && !isEditing && (
+                      <div className="flex items-center gap-2">
+                        <code className="text-xs bg-gray-50 px-2 py-1 rounded text-gray-600 flex-1">{config.masked}</code>
+                        <button onClick={() => { setEditKey(key); setEditValue(""); }}
+                          className="text-xs text-indigo-600 font-medium px-3 py-1.5 bg-indigo-50 rounded-lg">
+                          Schimba
+                        </button>
+                      </div>
+                    )}
+
+                    {(!config?.configured || isEditing) && (
+                      <div className="flex gap-2">
+                        <input
+                          type={isSensitive ? "password" : "text"}
+                          value={isEditing ? editValue : ""}
+                          onChange={(e) => { setEditKey(key); setEditValue(e.target.value); }}
+                          placeholder={info.placeholder}
+                          className="flex-1 text-sm px-3 py-2 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-indigo-500"
+                        />
+                        <button onClick={() => saveKey(key)} disabled={saving || !editValue}
+                          className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50">
+                          {saving ? "..." : "Salveaza"}
+                        </button>
+                        {isEditing && (
+                          <button onClick={() => { setEditKey(null); setEditValue(""); }}
+                            className="text-sm text-gray-400 px-2">
+                            Anuleaza
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {/* SMS Section */}
           <div>
             <div className="flex items-center gap-2 mb-3">
@@ -228,6 +300,7 @@ export default function SetariPage() {
               <li>OpenAI: platform.openai.com &rarr; API Keys</li>
               <li>Anthropic: console.anthropic.com &rarr; API Keys</li>
               <li>Google Gemini: aistudio.google.com &rarr; API Keys</li>
+              <li>Resend: resend.com &rarr; API Keys (gratuit 100 email/zi)</li>
               <li>Twilio: twilio.com &rarr; Console &rarr; Account SID &amp; Auth Token</li>
             </ul>
           </div>

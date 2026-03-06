@@ -52,7 +52,9 @@ model Beneficiary {
   disabilities        String? // handicap/limitari
   priorPsychEval      String  @default("nu") // da/nu
 
-  evaluations Evaluation[]
+  evaluations   Evaluation[]
+  parents       Parent[]
+  progressNotes ProgressNote[]
 }
 
 // ==================== EVALUARI PSIHOSOCIALE ====================
@@ -147,6 +149,84 @@ model SystemConfig {
   key   String @unique
   value String
   updatedAt DateTime @updatedAt
+}
+
+// ==================== PARINTI & ABONAMENTE ====================
+
+model Parent {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  password     String
+  firstName    String
+  lastName     String
+  phone        String?
+  active       Boolean  @default(true)
+  emailVerified Boolean @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Legatura cu copilul din sistem
+  beneficiaryId String?
+  beneficiary   Beneficiary? @relation(fields: [beneficiaryId], references: [id])
+
+  subscription  Subscription?
+  emailLogs     EmailLog[]
+}
+
+model SubscriptionPlan {
+  id          String   @id @default(cuid())
+  name        String   @unique // basic, premium, vip
+  displayName String   // "Basic", "Premium", "VIP"
+  price       Float    // pret lunar in RON
+  features    String   // JSON array cu features
+  color       String   @default("#3B82F6")
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id        String   @id @default(cuid())
+  status    String   @default("active") // active, expired, cancelled, trial
+  startDate DateTime @default(now())
+  endDate   DateTime
+  autoRenew Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parentId String @unique
+  parent   Parent @relation(fields: [parentId], references: [id])
+
+  planId String
+  plan   SubscriptionPlan @relation(fields: [planId], references: [id])
+}
+
+model ProgressNote {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   // text sau JSON
+  category  String   // teme, comportament, sanatate, social, general
+  isPublic  Boolean  @default(true) // vizibil pentru parinte
+  createdAt DateTime @default(now())
+
+  beneficiaryId String
+  beneficiary   Beneficiary @relation(fields: [beneficiaryId], references: [id])
+}
+
+model EmailLog {
+  id         String   @id @default(cuid())
+  to         String
+  subject    String
+  template   String   // welcome, expiry_warning, expired, promotional, reminder
+  status     String   @default("sent") // sent, failed, bounced
+  resendId   String?  // ID de la Resend
+  error      String?
+  createdAt  DateTime @default(now())
+
+  parentId   String?
+  parent     Parent?  @relation(fields: [parentId], references: [id])
 }
 
 // ==================== AUDIT / GDPR ====================
