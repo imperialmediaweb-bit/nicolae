@@ -22,6 +22,24 @@ const mealTypes = [
   { id: "cina", label: "Cina", icon: "\uD83C\uDF19" },
 ];
 
+const INGREDIENT_CATEGORIES = [
+  { name: "Legume", icon: "\uD83E\uDD6C", items: ["ceapa", "morcov", "cartofi", "rosii", "ardei", "varza", "usturoi", "spanac", "fasole verde", "mazare", "dovlecei", "vinete", "sfecla", "telina", "pastarnac", "patrunjel radacina"] },
+  { name: "Lactate", icon: "\uD83E\uDDC0", items: ["oua", "branza sarata", "cas", "smantana", "lapte", "unt", "iaurt", "telemea"] },
+  { name: "Cereale", icon: "\uD83C\uDF3E", items: ["paste", "orez", "mamaliga", "faina", "paine", "gris", "bulgur", "couscous"] },
+  { name: "Carne", icon: "\uD83C\uDF57", items: ["pui", "porc", "vita", "peste", "sunca", "carnati", "afumatura", "ton conserva"] },
+  { name: "Conserve", icon: "\uD83E\uDD6B", items: ["fasole boabe", "linte", "naut", "rosii conserva", "bulion", "ulei", "otet", "zahar", "bors"] },
+  { name: "Condimente", icon: "\uD83C\uDF3F", items: ["sare", "piper", "boia", "oregano", "cimbru", "dafin", "patrunjel", "marar", "leustean"] },
+];
+
+const MEAL_PRESETS = [
+  { label: "De post", icon: "\uD83D\uDE4F", value: "de post, fara carne, fara lactate, fara oua" },
+  { label: "Cu carne", icon: "\uD83C\uDF56", value: "cu carne" },
+  { label: "Supa/Ciorba", icon: "\uD83C\uDF72", value: "supa sau ciorba traditionala romaneasca" },
+  { label: "Mic dejun", icon: "\u23F0", value: "mic dejun simplu si consistent" },
+  { label: "Pt copii", icon: "\uD83D\uDC76", value: "retete simple, prietenoase pentru copii" },
+  { label: "Dulce", icon: "\uD83C\uDF70", value: "desert sau ceva dulce" },
+];
+
 function getWeekStart(date: Date): Date {
   const d = new Date(date);
   const day = d.getDay();
@@ -39,7 +57,13 @@ function formatWeek(date: Date): string {
 
 function getTodayDayOfWeek(): number {
   const d = new Date().getDay();
-  return d === 0 ? 6 : d - 1; // Convert Sunday=0 to Monday-based (0=Mon, 6=Sun)
+  return d === 0 ? 6 : d - 1;
+}
+
+function parseRecipes(text: string): string[] {
+  const parts = text.split(/(?=\n\d+\.\s)/);
+  const recipes = parts.filter(p => p.trim().length > 30);
+  return recipes.length >= 2 ? recipes : [];
 }
 
 export default function RetetarPage() {
@@ -50,11 +74,14 @@ export default function RetetarPage() {
 
   // AI Suggest state
   const [showSuggest, setShowSuggest] = useState(false);
-  const [ingredients, setIngredients] = useState("");
-  const [mealType, setMealType] = useState("cina");
-  const [preferences, setPreferences] = useState("");
+  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
+  const [extraIngredients, setExtraIngredients] = useState("");
+  const [mealType, setMealType] = useState("pranz");
+  const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [suggesting, setSuggesting] = useState(false);
   const [suggestions, setSuggestions] = useState("");
+  const [activeCategory, setActiveCategory] = useState(0);
+  const [isListening, setIsListening] = useState(false);
 
   const loadMeals = useCallback(() => {
     setLoading(true);
@@ -78,16 +105,79 @@ export default function RetetarPage() {
     setWeekStart(d);
   }
 
+  function toggleIngredient(item: string) {
+    setSelectedIngredients(prev =>
+      prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]
+    );
+  }
+
+  function startListening() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = window as any;
+    const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
+    if (!SR) {
+      alert("Browserul tau nu suporta dictarea vocala. Incearca Chrome.");
+      return;
+    }
+    const recognition = new SR();
+    recognition.lang = "ro-RO";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      const spoken = transcript.toLowerCase().split(/[,]|\bsi\b|\bcu\b/).map((s: string) => s.trim()).filter(Boolean);
+      const allKnown = INGREDIENT_CATEGORIES.flatMap(c => c.items);
+      const matched: string[] = [];
+      const unmatched: string[] = [];
+
+      for (const word of spoken) {
+        const found = allKnown.find(ing => ing.includes(word) || word.includes(ing));
+        if (found && !selectedIngredients.includes(found)) {
+          matched.push(found);
+        } else if (!found) {
+          unmatched.push(word);
+        }
+      }
+
+      if (matched.length > 0) {
+        setSelectedIngredients(prev => [...new Set([...prev, ...matched])]);
+      }
+      if (unmatched.length > 0) {
+        setExtraIngredients(prev => prev ? `${prev}, ${unmatched.join(", ")}` : unmatched.join(", "));
+      }
+    };
+
+    recognition.start();
+  }
+
+  const totalIngredientCount = selectedIngredients.length + (extraIngredients.trim() ? extraIngredients.split(",").filter(s => s.trim()).length : 0);
+
   async function handleSuggest(e: React.FormEvent) {
     e.preventDefault();
-    if (!ingredients.trim()) return;
+    const allIngredients = [
+      ...selectedIngredients,
+      ...extraIngredients.split(",").map(s => s.trim()).filter(Boolean),
+    ].join(", ");
+
+    if (!allIngredients) return;
+
     setSuggesting(true);
     setSuggestions("");
     try {
       const res = await fetch("/api/retetar/suggest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ingredients, mealType, preferences }),
+        body: JSON.stringify({
+          ingredients: allIngredients,
+          mealType,
+          preferences: selectedPreset || "",
+        }),
       });
       const data = await res.json();
       setSuggestions(data.suggestions || "Nu am putut genera sugestii.");
@@ -233,47 +323,129 @@ export default function RetetarPage() {
         </button>
 
         {showSuggest && (
-          <form onSubmit={handleSuggest} className="mt-3 bg-white rounded-2xl border border-gray-100 p-4 shadow-sm space-y-3">
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Ce ingrediente ai in frigider? *</label>
-              <textarea
-                value={ingredients}
-                onChange={(e) => setIngredients(e.target.value)}
-                rows={3}
-                required
-                placeholder="Ex: cartofi, ceapa, morcov, branza, oua, smantana, mamaliga..."
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 resize-none"
-              />
+          <div className="mt-3 space-y-3">
+
+            {/* Selected ingredients chips */}
+            {selectedIngredients.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 bg-green-50 rounded-2xl p-3 border border-green-100">
+                <p className="w-full text-[10px] font-medium text-green-600 mb-1">Selectate ({selectedIngredients.length}):</p>
+                {selectedIngredients.map(item => (
+                  <button
+                    key={item}
+                    onClick={() => toggleIngredient(item)}
+                    className="bg-green-600 text-white text-xs px-2.5 py-1.5 rounded-full font-medium flex items-center gap-1 active:scale-95 transition"
+                  >
+                    {item}
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Category tabs */}
+            <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide">
+              {INGREDIENT_CATEGORIES.map((cat, i) => (
+                <button
+                  key={cat.name}
+                  onClick={() => setActiveCategory(i)}
+                  className={`flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition ${
+                    activeCategory === i
+                      ? "bg-green-600 text-white shadow-md"
+                      : "bg-white text-gray-600 border border-gray-200"
+                  }`}
+                >
+                  <span>{cat.icon}</span>
+                  <span>{cat.name}</span>
+                </button>
+              ))}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Tip masa</label>
-                <select
-                  value={mealType}
-                  onChange={(e) => setMealType(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900"
-                >
-                  {mealTypes.map((mt) => (
-                    <option key={mt.id} value={mt.id}>{mt.icon} {mt.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Preferinte</label>
-                <input
-                  value={preferences}
-                  onChange={(e) => setPreferences(e.target.value)}
-                  placeholder="Ex: de post, fara lactate"
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900"
+            {/* Ingredient grid for active category */}
+            <div className="grid grid-cols-3 gap-2">
+              {INGREDIENT_CATEGORIES[activeCategory].items.map(item => {
+                const isSelected = selectedIngredients.includes(item);
+                return (
+                  <button
+                    key={item}
+                    onClick={() => toggleIngredient(item)}
+                    className={`py-2.5 px-2 rounded-xl text-sm font-medium text-center transition active:scale-95 ${
+                      isSelected
+                        ? "bg-green-500 text-white shadow-md"
+                        : "bg-white text-gray-700 border border-gray-200"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Voice + extra textarea */}
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <label className="text-[10px] text-gray-500 mb-1 block">Alte ingrediente</label>
+                <textarea
+                  value={extraIngredients}
+                  onChange={(e) => setExtraIngredients(e.target.value)}
+                  rows={2}
+                  placeholder="Scrie sau dicteaza alte ingrediente..."
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 resize-none"
                 />
               </div>
+              <button
+                type="button"
+                onClick={startListening}
+                className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 transition ${
+                  isListening
+                    ? "bg-red-500 animate-pulse"
+                    : "bg-gray-100 active:bg-gray-200"
+                }`}
+              >
+                <svg className={`w-6 h-6 ${isListening ? "text-white" : "text-gray-600"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-14 0m14 0a7 7 0 00-14 0m14 0v1a7 7 0 01-14 0v-1m7 8v4m-4 0h8M12 1a3 3 0 00-3 3v7a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                </svg>
+              </button>
             </div>
 
+            {/* Meal type + Presets */}
+            <div>
+              <label className="text-[10px] text-gray-500 mb-1 block">Tip masa</label>
+              <select
+                value={mealType}
+                onChange={(e) => setMealType(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900"
+              >
+                {mealTypes.map((mt) => (
+                  <option key={mt.id} value={mt.id}>{mt.icon} {mt.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {MEAL_PRESETS.map(preset => (
+                <button
+                  key={preset.value}
+                  type="button"
+                  onClick={() => setSelectedPreset(selectedPreset === preset.value ? null : preset.value)}
+                  className={`px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 transition active:scale-95 ${
+                    selectedPreset === preset.value
+                      ? "bg-amber-100 text-amber-800 border border-amber-300"
+                      : "bg-white text-gray-600 border border-gray-200"
+                  }`}
+                >
+                  <span>{preset.icon}</span>
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Submit */}
             <button
-              type="submit"
-              disabled={suggesting || !ingredients.trim()}
-              className="w-full py-3 bg-green-600 text-white rounded-xl font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+              onClick={handleSuggest}
+              disabled={suggesting || totalIngredientCount === 0}
+              className="w-full py-3.5 bg-green-600 text-white rounded-2xl font-bold text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98] transition"
             >
               {suggesting ? (
                 <>
@@ -281,19 +453,44 @@ export default function RetetarPage() {
                   AI-ul gandeste...
                 </>
               ) : (
-                "Sugereaza retete"
+                <>
+                  Sugereaza retete
+                  {totalIngredientCount > 0 && (
+                    <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">
+                      {totalIngredientCount} ingrediente
+                    </span>
+                  )}
+                </>
               )}
             </button>
 
-            {suggestions && (
-              <div className="bg-green-50 rounded-xl p-4 border border-green-100">
-                <p className="text-[10px] font-medium text-green-700 mb-2">Sugestii AI:</p>
-                <div className="text-sm text-green-900 whitespace-pre-line leading-relaxed prose-sm">
-                  {suggestions}
+            {/* AI Response - recipe cards */}
+            {suggestions && (() => {
+              const recipes = parseRecipes(suggestions);
+              if (recipes.length > 0) {
+                return (
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold text-green-700">Sugestii AI (pt 150 portii):</p>
+                    {recipes.map((recipe, i) => (
+                      <div key={i} className="bg-white rounded-2xl border border-green-200 p-4 shadow-sm">
+                        <div className="text-sm text-gray-900 whitespace-pre-line leading-relaxed">
+                          {recipe.trim()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+              return (
+                <div className="bg-green-50 rounded-2xl p-4 border border-green-100">
+                  <p className="text-[10px] font-medium text-green-700 mb-2">Sugestii AI (pt 150 portii):</p>
+                  <div className="text-sm text-green-900 whitespace-pre-line leading-relaxed">
+                    {suggestions}
+                  </div>
                 </div>
-              </div>
-            )}
-          </form>
+              );
+            })()}
+          </div>
         )}
       </div>
     </AppLayout>
