@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   try {
     await requireAuth(["admin"]);
 
-    const { id, weekStart: weekStartStr, dayOfWeek, mealType, title, description, ingredients, notes, prepNotes } = await req.json();
+    const { id, weekStart: weekStartStr, dayOfWeek, mealType, title, description, ingredients, calories, notes, prepNotes } = await req.json();
 
     if (dayOfWeek === undefined || !mealType || !title) {
       return NextResponse.json({ error: "Campuri obligatorii: dayOfWeek, mealType, title" }, { status: 400 });
@@ -51,14 +51,14 @@ export async function POST(req: NextRequest) {
       // Update existing
       const meal = await prisma.mealPlan.update({
         where: { id },
-        data: { dayOfWeek, mealType, title, description: description || "", ingredients, notes, prepNotes, weekStart },
+        data: { dayOfWeek, mealType, title, description: description || "", ingredients, calories: calories ? parseInt(calories) : null, notes, prepNotes, weekStart },
       });
       return NextResponse.json(meal);
     }
 
     // Create new
     const meal = await prisma.mealPlan.create({
-      data: { weekStart, dayOfWeek, mealType, title, description: description || "", ingredients, notes, prepNotes },
+      data: { weekStart, dayOfWeek, mealType, title, description: description || "", ingredients, calories: calories ? parseInt(calories) : null, notes, prepNotes },
     });
     return NextResponse.json(meal, { status: 201 });
   } catch (err) {

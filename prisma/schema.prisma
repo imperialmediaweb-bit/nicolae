@@ -239,6 +239,7 @@ model MealPlan {
   title       String   // "Ciorba de sfecla rosie"
   description String   // Reteta / instructiuni detaliate
   ingredients String?  // Lista ingrediente (text)
+  calories    Int?     // Calorii per portie
   notes       String?  // Note extra (ex: "sa iasa rosie, nu culoarea pamantului")
   prepNotes   String?  // Pregatiri (ex: "de azi sa toace ceapa")
   createdAt   DateTime @default(now())

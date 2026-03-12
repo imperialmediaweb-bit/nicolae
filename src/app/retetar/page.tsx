@@ -10,6 +10,7 @@ interface Meal {
   title: string;
   description: string;
   ingredients: string | null;
+  calories: number | null;
   notes: string | null;
   prepNotes: string | null;
 }
@@ -156,7 +157,17 @@ export default function RetetarPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          <h2 className="font-bold text-gray-900">{dayNames[selectedDay]}</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold text-gray-900">{dayNames[selectedDay]}</h2>
+            {(() => {
+              const totalCal = dayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+              return totalCal > 0 ? (
+                <span className="text-xs bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full font-semibold">
+                  Total: {totalCal} kcal
+                </span>
+              ) : null;
+            })()}
+          </div>
 
           {mealTypes.map((mt) => {
             const meal = dayMeals.find((m) => m.mealType === mt.id);
@@ -170,7 +181,12 @@ export default function RetetarPage() {
 
                 {meal ? (
                   <div>
-                    <p className="font-medium text-gray-800 text-sm">{meal.title}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-gray-800 text-sm">{meal.title}</p>
+                      {meal.calories && (
+                        <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full font-medium">{meal.calories} kcal</span>
+                      )}
+                    </div>
                     <p className="text-gray-600 text-xs mt-1 whitespace-pre-line leading-relaxed">{meal.description}</p>
                     {meal.ingredients && (
                       <div className="mt-2 bg-amber-50 rounded-xl p-2.5">

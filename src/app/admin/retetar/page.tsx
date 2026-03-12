@@ -10,6 +10,7 @@ interface Meal {
   title: string;
   description: string;
   ingredients: string | null;
+  calories: number | null;
   notes: string | null;
   prepNotes: string | null;
 }
@@ -46,7 +47,7 @@ export default function AdminRetetarPage() {
   const [selectedDay, setSelectedDay] = useState(0);
 
   const [form, setForm] = useState({
-    dayOfWeek: 0, mealType: "pranz", title: "", description: "", ingredients: "", notes: "", prepNotes: "",
+    dayOfWeek: 0, mealType: "pranz", title: "", description: "", ingredients: "", calories: "", notes: "", prepNotes: "",
   });
 
   const loadMeals = useCallback(() => {
@@ -73,7 +74,7 @@ export default function AdminRetetarPage() {
 
   function openNew(dayOfWeek: number, mealType: string) {
     setEditMeal(null);
-    setForm({ dayOfWeek, mealType, title: "", description: "", ingredients: "", notes: "", prepNotes: "" });
+    setForm({ dayOfWeek, mealType, title: "", description: "", ingredients: "", calories: "", notes: "", prepNotes: "" });
     setShowForm(true);
   }
 
@@ -85,6 +86,7 @@ export default function AdminRetetarPage() {
       title: meal.title,
       description: meal.description,
       ingredients: meal.ingredients || "",
+      calories: meal.calories ? String(meal.calories) : "",
       notes: meal.notes || "",
       prepNotes: meal.prepNotes || "",
     });
@@ -212,7 +214,12 @@ export default function AdminRetetarPage() {
 
                 {meal ? (
                   <div>
-                    <p className="font-medium text-gray-800 text-sm">{meal.title}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-gray-800 text-sm">{meal.title}</p>
+                      {meal.calories && (
+                        <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full font-medium">{meal.calories} kcal</span>
+                      )}
+                    </div>
                     <p className="text-gray-600 text-xs mt-1 whitespace-pre-line leading-relaxed">{meal.description}</p>
                     {meal.ingredients && (
                       <div className="mt-2 bg-amber-50 rounded-xl p-2.5">
@@ -297,6 +304,13 @@ export default function AdminRetetarPage() {
                 <textarea value={form.ingredients} onChange={(e) => setForm({ ...form, ingredients: e.target.value })}
                   rows={3} placeholder="Ceapa, morcov, telina, pastarnac, sfecla rosie, cartofi, patrunjel"
                   className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 resize-none" />
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Calorii per portie</label>
+                <input type="number" value={form.calories} onChange={(e) => setForm({ ...form, calories: e.target.value })}
+                  placeholder="Ex: 350"
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900" />
               </div>
 
               <div>
