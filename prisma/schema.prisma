@@ -229,6 +229,22 @@ model EmailLog {
   parent     Parent?  @relation(fields: [parentId], references: [id])
 }
 
+// ==================== RETETAR SAPTAMANAL ====================
+
+model MealPlan {
+  id          String   @id @default(cuid())
+  weekStart   DateTime // Luni-ul saptamanii (ex: 2026-03-09)
+  dayOfWeek   Int      // 0=Luni, 1=Marti ... 6=Duminica
+  mealType    String   // mic_dejun, pranz, cina
+  title       String   // "Ciorba de sfecla rosie"
+  description String   // Reteta / instructiuni detaliate
+  ingredients String?  // Lista ingrediente (text)
+  notes       String?  // Note extra (ex: "sa iasa rosie, nu culoarea pamantului")
+  prepNotes   String?  // Pregatiri (ex: "de azi sa toace ceapa")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 // ==================== AUDIT / GDPR ====================
 
 model AccessLog {

@@ -101,6 +101,15 @@ export default function PortalDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("progres");
+  const [weeklyMenu, setWeeklyMenu] = useState<Array<{
+    id: string; dayOfWeek: number; mealType: string; title: string;
+    description: string; ingredients: string | null; notes: string | null; prepNotes: string | null;
+  }>>([]);
+  const [menuWeekStart, setMenuWeekStart] = useState("");
+  const [menuDay, setMenuDay] = useState(() => {
+    const d = new Date().getDay();
+    return d === 0 ? 6 : d - 1; // 0=Luni
+  });
   const router = useRouter();
 
   useEffect(() => {
@@ -112,6 +121,15 @@ export default function PortalDashboard() {
       .then(setData)
       .catch(() => router.push("/portal/login"))
       .finally(() => setLoading(false));
+
+    // Fetch weekly menu
+    fetch("/api/retetar")
+      .then((r) => r.json())
+      .then((data) => {
+        setWeeklyMenu(data.meals || []);
+        setMenuWeekStart(data.weekStart || "");
+      })
+      .catch(() => {});
   }, [router]);
 
   async function handleLogout() {
@@ -138,6 +156,7 @@ export default function PortalDashboard() {
 
   const tabs = [
     { id: "progres", label: "Progres", icon: "📊", feature: null },
+    { id: "retetar", label: "Meniu", icon: "🍽️", feature: null },
     { id: "tips-parinti", label: "Sfaturi Parinti", icon: "💡", feature: null },
     { id: "tips-copii", label: "Sfaturi Copii", icon: "🌟", feature: null },
     { id: "retete", label: "Retete", icon: "🥗", feature: "retete" },
@@ -264,6 +283,74 @@ export default function PortalDashboard() {
                   <p className="text-gray-600 text-sm mt-1 leading-relaxed">{note.content}</p>
                 </div>
               ))
+            )}
+          </div>
+        )}
+
+        {/* RETETAR / MENIU TAB */}
+        {activeTab === "retetar" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-gray-900 text-lg">Meniul saptamanii</h2>
+              {menuWeekStart && (
+                <span className="text-xs text-gray-400">
+                  {new Date(menuWeekStart).toLocaleDateString("ro-RO", { day: "numeric", month: "short" })} -
+                  {" "}{new Date(new Date(menuWeekStart).getTime() + 6 * 86400000).toLocaleDateString("ro-RO", { day: "numeric", month: "short" })}
+                </span>
+              )}
+            </div>
+
+            {/* Day selector */}
+            <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+              {["Lun", "Mar", "Mie", "Joi", "Vin", "Sam", "Dum"].map((name, i) => (
+                <button key={i} onClick={() => setMenuDay(i)}
+                  className={`min-w-[44px] py-2 rounded-xl text-xs font-medium transition ${
+                    menuDay === i ? "bg-indigo-600 text-white" : "bg-white text-gray-600 border border-gray-200"
+                  }`}>
+                  {name}
+                </button>
+              ))}
+            </div>
+
+            {/* Meals for selected day */}
+            {[
+              { id: "mic_dejun", label: "Mic dejun", icon: "☀️" },
+              { id: "pranz", label: "Pranz", icon: "🍽️" },
+              { id: "cina", label: "Cina", icon: "🌙" },
+            ].map((mt) => {
+              const meal = weeklyMenu.find((m) => m.dayOfWeek === menuDay && m.mealType === mt.id);
+              return (
+                <div key={mt.id} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">{mt.icon}</span>
+                    <h3 className="font-semibold text-gray-900 text-sm">{mt.label}</h3>
+                  </div>
+                  {meal ? (
+                    <div>
+                      <p className="font-medium text-gray-800 text-sm">{meal.title}</p>
+                      <p className="text-gray-600 text-xs mt-1 whitespace-pre-line leading-relaxed">{meal.description}</p>
+                      {meal.ingredients && (
+                        <div className="mt-2 bg-amber-50 rounded-xl p-2.5">
+                          <p className="text-[10px] font-medium text-amber-700 mb-0.5">Ingrediente:</p>
+                          <p className="text-xs text-amber-800">{meal.ingredients}</p>
+                        </div>
+                      )}
+                      {meal.notes && (
+                        <p className="text-xs text-purple-600 mt-2 bg-purple-50 rounded-xl p-2">{meal.notes}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400 text-xs italic">Meniu nesetat</p>
+                  )}
+                </div>
+              );
+            })}
+
+            {weeklyMenu.length === 0 && (
+              <div className="bg-gray-50 rounded-2xl p-6 text-center">
+                <span className="text-3xl block mb-2">🍽️</span>
+                <p className="text-gray-500 text-sm">Meniul saptamanii nu a fost inca setat de catre centru.</p>
+              </div>
             )}
           </div>
         )}

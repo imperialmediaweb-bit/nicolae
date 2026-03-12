@@ -171,6 +171,15 @@ export default function AdminUseriPage() {
             <p className="text-[10px] text-gray-400">Conturi & abonamente</p>
           </div>
         </Link>
+        <Link href="/admin/retetar">
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 active:scale-[0.98] transition shadow-sm">
+            <div className="bg-amber-100 w-10 h-10 rounded-xl flex items-center justify-center mb-2">
+              <span className="text-xl">🍽️</span>
+            </div>
+            <h3 className="font-bold text-gray-900 text-sm">Retetar</h3>
+            <p className="text-[10px] text-gray-400">Meniu saptamanal</p>
+          </div>
+        </Link>
         <Link href="/admin/email">
           <div className="bg-white rounded-2xl border border-gray-100 p-4 active:scale-[0.98] transition shadow-sm">
             <div className="bg-emerald-100 w-10 h-10 rounded-xl flex items-center justify-center mb-2">
